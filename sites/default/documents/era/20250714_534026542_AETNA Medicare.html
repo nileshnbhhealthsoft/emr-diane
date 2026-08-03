@@ -1,0 +1,76 @@
+<html>
+<head>
+
+<meta charset="utf-8" />
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+<link rel="shortcut icon" href="/public/images/logos/core/favicon/favicon.ico?t=1700108884" />
+
+<link rel="stylesheet" href="/public/themes/style_manila.css?v=76" />
+
+<script src="/public/assets/jquery/dist/jquery.min.js?v=76"></script>
+<script src="/public/assets/bootstrap/dist/js/bootstrap.bundle.min.js?v=76"></script>
+<script src="/library/js/utility.js?v=76"></script>
+<script src="/library/textformat.js?v=76"></script>
+<script src="/library/dialog.js?v=76"></script>
+
+<style>
+    body {
+        font-family: sans-serif;
+        font-size: 0.6875rem;
+        font-weight: normal;
+    }
+    .dehead {
+        font-family: sans-serif;
+        font-size: 0.75rem;
+        font-weight: bold;
+    }
+    .olddetail {
+        font-family: sans-serif;
+        font-size: 0.75rem;
+        font-weight: normal;
+    }
+    .newdetail {
+        color: var(--success);
+        font-family: sans-serif;
+        font-size: 0.75rem;
+        font-weight: normal;
+    }
+    .errdetail {
+        color: var(--danger);
+        font-family: sans-serif;
+        font-size: 0.75rem;
+        font-weight: normal;
+    }
+    .infdetail {
+        color: var(--primary);
+        font-family: sans-serif;
+        font-size: 0.75rem;
+        font-weight: normal;
+    }
+</style>
+<title>EOB Posting - Electronic Remittances</title>
+</head>
+<body class='m-0'>
+<form action="sl_eob_process.php" method="get">
+<input type="hidden" name="csrf_token_form" value="189b06cbdd68c47225713686a78278002ccd3952" />
+
+<table class='table'><thead><tr><th scope='col'>Check Number</th><th scope='col'>Payee Name</th><th scope='col'>Payer Name</th><th scope='col'>Check Amount</th></tr></thead><tbody><tr bgcolor='#ddddff'><th scope='row'><input type='checkbox' name='chk882519301059740' id='chk882519301059740'/><label for='chk882519301059740'>&nbsp882519301059740</label></th><td>All Care Specialties</td><td>AETNA Medicare</td><td>125.53</td></tr><tr class='table-light'><td align='left'><button type='button' class='btn btn-secondary btn-save' name='Submit1' onclick='checkAll(true)'>Check All</button></td><td><input type='submit' name='CheckSubmit' value='Submit'/></td></tr></tbody></table><script>
+function checkAll(checked) {
+    var f = document.forms[0];
+    for (var i = 0; i < f.elements.length; ++i) {
+        var etype = f.elements[i].type;
+        if (etype === 'checkbox')
+            f.elements[i].checked = checked;
+    }
+}
+</script>
+<input type="hidden" name="paydate" value="" />
+<input type="hidden" name="post_to_date" value="" />
+<input type="hidden" name="deposit_date" value="" />
+<input type="hidden" name="debug" value="0" />
+<input type="hidden" name="InsId" value="" />
+<input type="hidden" name="eraname" value="20250714_534026542_AETNA Medicare" />
+</form>
+</body>
+</html>

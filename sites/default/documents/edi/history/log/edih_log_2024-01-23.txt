@@ -1,0 +1,9 @@
+20240123:100158 _GET request 
+ srvinfo => yes  csrf_token_form => 38fe7c86709063049e720b99b38b42375334dd6f 
+20240123:100158 _GET request 
+ loglist => yes  csrf_token_form => 38fe7c86709063049e720b99b38b42375334dd6f 
+20240123:100158 _GET request 
+ csvtbllist => yes  csrf_token_form => 38fe7c86709063049e720b99b38b42375334dd6f 
+20240123:100158 _GET request 
+ archlist => yes  csrf_token_form => 38fe7c86709063049e720b99b38b42375334dd6f 
+20240123:100158 csv_archive_select_list: using /var/www/html/ehr/sites/default/documents/edi/history/archive

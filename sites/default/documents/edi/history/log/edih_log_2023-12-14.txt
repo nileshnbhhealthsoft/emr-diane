@@ -1,0 +1,9 @@
+20231214:091237 _GET request 
+ srvinfo => yes  csrf_token_form => 7e0a58d5e67b62578c16c6a306c48ecba41ec92d 
+20231214:091237 _GET request 
+ csvtbllist => yes  csrf_token_form => 7e0a58d5e67b62578c16c6a306c48ecba41ec92d 
+20231214:091237 _GET request 
+ loglist => yes  csrf_token_form => 7e0a58d5e67b62578c16c6a306c48ecba41ec92d 
+20231214:091237 _GET request 
+ archlist => yes  csrf_token_form => 7e0a58d5e67b62578c16c6a306c48ecba41ec92d 
+20231214:091237 csv_archive_select_list: using /var/www/html/ehr/sites/default/documents/edi/history/archive

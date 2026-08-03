@@ -1,0 +1,22 @@
+20230810:080801 EDI_History Setup should not overwrite existing data.<br />
+Setup: directory /var/www/html/ehr/sites/default/documents/edi<br />
+created folder /var/www/html/ehr/sites/default/documents/edi/history<br />
+created folder /var/www/html/ehr/sites/default/documents/edi/history/csv<br />
+created folder /var/www/html/ehr/sites/default/documents/edi/history/archive<br />
+created folder /var/www/html/ehr/sites/default/documents/edi/history/log<br />
+created folder /var/www/html/ehr/sites/default/documents/edi/history/tmp
+folder for f837 exists /var/www/html/ehr/sites/default/documents/edi<br />
+created type folder /var/www/html/ehr/sites/default/documents/edi/history/f997<br />
+created type folder /var/www/html/ehr/sites/default/documents/edi/history/f276<br />
+created type folder /var/www/html/ehr/sites/default/documents/edi/history/f277<br />
+created type folder /var/www/html/ehr/sites/default/documents/edi/history/f270<br />
+created type folder /var/www/html/ehr/sites/default/documents/edi/history/f271<br />
+created type folder /var/www/html/ehr/sites/default/documents/edi/history/f278<br />
+
+20230810:080801 _GET request 
+ srvinfo => yes  csrf_token_form => ff595d908fef91e097d640815adc3fabd2c2193e 
+20230810:080802 _GET request 
+ archlist => yes  csrf_token_form => ff595d908fef91e097d640815adc3fabd2c2193e 
+20230810:080802 csv_archive_select_list: using /var/www/html/ehr/sites/default/documents/edi/history/archive
+20230810:080802 _GET request 
+ loglist => yes  csrf_token_form => ff595d908fef91e097d640815adc3fabd2c2193e 

@@ -1,0 +1,55 @@
+20240122:080131 _GET request 
+ csvtbllist => yes  csrf_token_form => 91a01dfc138331bdad8ce9d2ace1c27e4511d610 
+20240122:080131 _GET request 
+ srvinfo => yes  csrf_token_form => 91a01dfc138331bdad8ce9d2ace1c27e4511d610 
+20240122:080131 _GET request 
+ loglist => yes  csrf_token_form => 91a01dfc138331bdad8ce9d2ace1c27e4511d610 
+20240122:080131 _GET request 
+ archlist => yes  csrf_token_form => 91a01dfc138331bdad8ce9d2ace1c27e4511d610 
+20240122:080131 csv_archive_select_list: using /var/www/html/ehr/sites/default/documents/edi/history/archive
+20240122:080155 _POST request 
+ csrf_token_form => 91a01dfc138331bdad8ce9d2ace1c27e4511d610  viewx12Files => view_x12 
+20240122:080155 User: 49.43.153.72 - January 22, 2024, 8:58 am
+20240122:080155 edih_disp_x12file: submitted POST seg f837 /var/www/html/ehr/sites/default/documents/edi/history/tmp/2024-01-22-085554-batch.txt 2024-01-22-085554-batch.txt
+20240122:080155 edih_disp_x12file: segments display /var/www/html/ehr/sites/default/documents/edi/history/tmp/2024-01-22-085554-batch.txt
+20240122:080112 _GET request 
+ csrf_token_form => 91a01dfc138331bdad8ce9d2ace1c27e4511d610  csv_period => 2w  csv_date_start =>   csv_date_end =>   csvShowTable => gettable 
+20240122:080112 User: 49.43.153.72 - January 22, 2024, 8:59 am
+20240122:080112 edih_disp_csvtable:  period 2w datestart  dateend 
+20240122:090130 _GET request 
+ csrf_token_form => 91a01dfc138331bdad8ce9d2ace1c27e4511d610  process_html => htm  process_err => err  ProcessFiles => ProcessNew 
+20240122:090130 User: 49.43.153.72 - January 22, 2024, 9:23 am
+20240122:090130 edih_disp_file_process GET vars csrf_token_form 91a01dfc138331bdad8ce9d2ace1c27e4511d610  process_html htm  process_err err  ProcessFiles ProcessNew  
+20240122:090130 csv_processed_files_list: csv file does not exist files_f837.csv
+20240122:090130 edih_csv_write: created files_csv file for f837
+20240122:090130 edih_csv_write: created claims_csv file for f837
+20240122:090130 edih_csv_write() wrote 1 rows to claims_f837.csv
+20240122:090130 edih_csv_write() wrote 1 rows to files_f837.csv
+20240122:090130 edih_csv_write: csv check for files csv f837
+20240122:090130 edih_csv_write: csv check for claims csv f837
+20240122:090130 edih_csv_write() wrote 1 rows to claims_f837.csv
+20240122:090130 edih_csv_write() wrote 1 rows to files_f837.csv
+20240122:090130 csv_check_x12_obj: invalid object /var/www/html/ehr/sites/default/documents/edi/2023-11-06-103838-batch.pdf
+20240122:090130 edih_parse_select: error in file path
+20240122:090130 edih_csv_write(): invalid data array
+20240122:090130 csv_check_x12_obj: invalid object /var/www/html/ehr/sites/default/documents/edi/2023-12-14-094724-batch.pdf
+20240122:090130 edih_parse_select: error in file path
+20240122:090130 edih_csv_write(): invalid data array
+20240122:090130 csv_check_x12_obj: invalid object /var/www/html/ehr/sites/default/documents/edi/2021-10-26-1201-batch.pdf
+20240122:090130 edih_parse_select: error in file path
+20240122:090130 edih_csv_write(): invalid data array
+20240122:090130 csv_check_x12_obj: object missing properties [/var/www/html/ehr/sites/default/documents/edi/2023-08-10-0843-batch.txt]
+20240122:090130 <p>
+edih_x12_segments: invalid delimiters<br />
+edih_x12_file: error in creating segment array 2023-08-10-0843-batch.txt
+<br />
+
+</p>
+
+20240122:090130 edih_parse_select: error in file path
+20240122:090130 edih_csv_write(): invalid data array
+20240122:090130 csv_check_x12_obj: invalid object /var/www/html/ehr/sites/default/documents/edi/2024-01-22-084940-batch.pdf
+20240122:090130 edih_parse_select: error in file path
+20240122:090130 edih_csv_write(): invalid data array
+20240122:090130 _GET request 
+ csvtbllist => yes  csrf_token_form => 91a01dfc138331bdad8ce9d2ace1c27e4511d610 

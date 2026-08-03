@@ -1,0 +1,239 @@
+<html>
+<head>
+
+<meta charset="utf-8" />
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+<link rel="shortcut icon" href="/public/images/logos/core/favicon/favicon.ico?t=1700108884" />
+
+<link rel="stylesheet" href="/public/themes/style_manila.css?v=76" />
+
+<script src="/public/assets/jquery/dist/jquery.min.js?v=76"></script>
+<script src="/public/assets/bootstrap/dist/js/bootstrap.bundle.min.js?v=76"></script>
+<script src="/library/js/utility.js?v=76"></script>
+<script src="/library/textformat.js?v=76"></script>
+<script src="/library/dialog.js?v=76"></script>
+
+<style>
+    body {
+        font-family: sans-serif;
+        font-size: 0.6875rem;
+        font-weight: normal;
+    }
+    .dehead {
+        font-family: sans-serif;
+        font-size: 0.75rem;
+        font-weight: bold;
+    }
+    .olddetail {
+        font-family: sans-serif;
+        font-size: 0.75rem;
+        font-weight: normal;
+    }
+    .newdetail {
+        color: var(--success);
+        font-family: sans-serif;
+        font-size: 0.75rem;
+        font-weight: normal;
+    }
+    .errdetail {
+        color: var(--danger);
+        font-family: sans-serif;
+        font-size: 0.75rem;
+        font-weight: normal;
+    }
+    .infdetail {
+        color: var(--primary);
+        font-family: sans-serif;
+        font-size: 0.75rem;
+        font-weight: normal;
+    }
+</style>
+<title>EOB Posting - Electronic Remittances</title>
+</head>
+<body class='m-0'>
+<form action="sl_eob_process.php" method="get">
+<input type="hidden" name="csrf_token_form" value="189b06cbdd68c47225713686a78278002ccd3952" />
+
+    <table class='table table-borderless w-100' cellpadding='2' cellspacing='0'>
+
+     <tr class="table-light">
+      <td class="dehead">
+    Patient      </td>
+      <td class="dehead">
+    Invoice      </td>
+      <td class="dehead">
+    Code      </td>
+      <td class="dehead">
+    Date      </td>
+      <td class="dehead">
+    Description      </td>
+      <td class="dehead" align="right">
+    Amount&nbsp;
+      </td>
+      <td class="dehead" align="right">
+    Balance&nbsp;
+      </td>
+     </tr>
+
+     <tr bgcolor='var(--white)'>
+  <td class='infdetail' colspan='4'></td>
+  <td class='infdetail'>Payer: AETNA Medicare</td>
+  <td class='infdetail' colspan='2'></td>
+ </tr>
+ <tr bgcolor='#ddddff'>
+  <td class='infdetail' colspan='4'></td>
+  <td class='infdetail'>Claim status 1: Processed as Primary</td>
+  <td class='infdetail' colspan='2'></td>
+ </tr>
+ <tr bgcolor='#ddddff'>
+  <td class='errdetail' colspan='4'></td>
+  <td class='errdetail'>The following claim is not in our database</td>
+  <td class='errdetail' colspan='2'></td>
+ </tr>
+ <tr bgcolor='#ddddff'>
+  <td class='infdetail' colspan='4'></td>
+  <td class='infdetail'>Claim contact information: 8886323862<br />
+AMT segment at claim level ignored.</td>
+  <td class='infdetail' colspan='2'></td>
+ </tr>
+ <tr bgcolor='#ddddff'>
+  <td class='errdetail'>SONIA RAVARY</td>
+  <td class='errdetail'>1127</td>
+  <td class='errdetail'>99214:25</td>
+  <td class='errdetail'>07/14/2025</td>
+  <td class='errdetail'>CPT4:99214:25 Added by Ins1 2025-07-14</td>
+  <td class='errdetail' align='right'>200.00</td>
+  <td class='errdetail' align='right'>0.00</td>
+ </tr>
+ <tr bgcolor='#ddddff'>
+  <td class='infdetail' colspan='4'></td>
+  <td class='infdetail'>Allowed amount is 128.80</td>
+  <td class='infdetail' colspan='2'></td>
+ </tr>
+ <tr bgcolor='#ddddff'>
+  <td class='infdetail' colspan='4'></td>
+  <td class='infdetail'>N59: Alert: Please refer to your provider manual for additional program and provider information.</td>
+  <td class='infdetail' colspan='2'></td>
+ </tr>
+ <tr bgcolor='#ddddff'>
+  <td class='errdetail'></td>
+  <td class='errdetail'></td>
+  <td class='errdetail'></td>
+  <td class='errdetail'>07/17/2025</td>
+  <td class='errdetail'>Ins1/882519301059740 payment</td>
+  <td class='errdetail' align='right'>-87.02</td>
+  <td class='errdetail' align='right'>0.00</td>
+ </tr>
+ <tr bgcolor='#ddddff'>
+  <td class='errdetail' colspan='4'></td>
+  <td class='errdetail'>3: Co-payment Amount 40.00</td>
+  <td class='errdetail' colspan='2'></td>
+ </tr>
+ <tr bgcolor='#ddddff'>
+  <td class='errdetail'></td>
+  <td class='errdetail'></td>
+  <td class='errdetail'></td>
+  <td class='errdetail'>07/14/2025</td>
+  <td class='errdetail'>253: Sequestration - reduction in federal payment</td>
+  <td class='errdetail' align='right'>-1.78</td>
+  <td class='errdetail' align='right'>0.00</td>
+ </tr>
+ <tr bgcolor='#ddddff'>
+  <td class='errdetail'></td>
+  <td class='errdetail'></td>
+  <td class='errdetail'></td>
+  <td class='errdetail'>07/14/2025</td>
+  <td class='errdetail'>45: Charge exceeds fee schedule/maximum allowable or contracted/legislated fee arrangement. Usage: This adjustment amount cannot equal the total service or claim charge amount; and must not duplicate provider adjustment amounts (payments and contractual reductions) that have resulted from prior payer(s) adjudication. (Use only with Group Codes PR or CO depending upon liability)</td>
+  <td class='errdetail' align='right'>-71.20</td>
+  <td class='errdetail' align='right'>0.00</td>
+ </tr>
+ <tr bgcolor='#ddddff'>
+  <td class='errdetail'></td>
+  <td class='errdetail'></td>
+  <td class='errdetail'>Q0091</td>
+  <td class='errdetail'>07/14/2025</td>
+  <td class='errdetail'>CPT4:Q0091 Added by Ins1 2025-07-14</td>
+  <td class='errdetail' align='right'>90.00</td>
+  <td class='errdetail' align='right'>0.00</td>
+ </tr>
+ <tr bgcolor='#ddddff'>
+  <td class='infdetail' colspan='4'></td>
+  <td class='infdetail'>N640: Exceeds number/frequency approved/allowed within time period.</td>
+  <td class='infdetail' colspan='2'></td>
+ </tr>
+ <tr bgcolor='#ddddff'>
+  <td class='errdetail'></td>
+  <td class='errdetail'></td>
+  <td class='errdetail'></td>
+  <td class='errdetail'>07/14/2025</td>
+  <td class='errdetail'>119: Benefit maximum for this time period or occurrence has been reached.</td>
+  <td class='errdetail' align='right'>-90.00</td>
+  <td class='errdetail' align='right'>0.00</td>
+ </tr>
+ <tr bgcolor='#ddddff'>
+  <td class='errdetail'></td>
+  <td class='errdetail'></td>
+  <td class='errdetail'>G0101</td>
+  <td class='errdetail'>07/14/2025</td>
+  <td class='errdetail'>CPT4:G0101 Added by Ins1 2025-07-14</td>
+  <td class='errdetail' align='right'>80.00</td>
+  <td class='errdetail' align='right'>0.00</td>
+ </tr>
+ <tr bgcolor='#ddddff'>
+  <td class='infdetail' colspan='4'></td>
+  <td class='infdetail'>Allowed amount is 39.30</td>
+  <td class='infdetail' colspan='2'></td>
+ </tr>
+ <tr bgcolor='#ddddff'>
+  <td class='infdetail' colspan='4'></td>
+  <td class='infdetail'>N59: Alert: Please refer to your provider manual for additional program and provider information.</td>
+  <td class='infdetail' colspan='2'></td>
+ </tr>
+ <tr bgcolor='#ddddff'>
+  <td class='errdetail'></td>
+  <td class='errdetail'></td>
+  <td class='errdetail'></td>
+  <td class='errdetail'>07/17/2025</td>
+  <td class='errdetail'>Ins1/882519301059740 payment</td>
+  <td class='errdetail' align='right'>-38.51</td>
+  <td class='errdetail' align='right'>0.00</td>
+ </tr>
+ <tr bgcolor='#ddddff'>
+  <td class='errdetail'></td>
+  <td class='errdetail'></td>
+  <td class='errdetail'></td>
+  <td class='errdetail'>07/14/2025</td>
+  <td class='errdetail'>253: Sequestration - reduction in federal payment</td>
+  <td class='errdetail' align='right'>-0.79</td>
+  <td class='errdetail' align='right'>0.00</td>
+ </tr>
+ <tr bgcolor='#ddddff'>
+  <td class='errdetail'></td>
+  <td class='errdetail'></td>
+  <td class='errdetail'></td>
+  <td class='errdetail'>07/14/2025</td>
+  <td class='errdetail'>45: Charge exceeds fee schedule/maximum allowable or contracted/legislated fee arrangement. Usage: This adjustment amount cannot equal the total service or claim charge amount; and must not duplicate provider adjustment amounts (payments and contractual reductions) that have resulted from prior payer(s) adjudication. (Use only with Group Codes PR or CO depending upon liability)</td>
+  <td class='errdetail' align='right'>-40.70</td>
+  <td class='errdetail' align='right'>0.00</td>
+ </tr>
+<script>alert("Total Distribution for following check number is not full: 882519301059740 ")</script>    </table>
+    <script>
+function checkAll(checked) {
+    var f = document.forms[0];
+    for (var i = 0; i < f.elements.length; ++i) {
+        var etype = f.elements[i].type;
+        if (etype === 'checkbox')
+            f.elements[i].checked = checked;
+    }
+}
+</script>
+<input type="hidden" name="paydate" value="" />
+<input type="hidden" name="post_to_date" value="" />
+<input type="hidden" name="deposit_date" value="" />
+<input type="hidden" name="debug" value="0" />
+<input type="hidden" name="InsId" value="" />
+<input type="hidden" name="eraname" value="20250714_534026542_AETNA" />
+</form>
+</body>
+</html>
