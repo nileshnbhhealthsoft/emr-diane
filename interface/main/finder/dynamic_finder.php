@@ -386,6 +386,13 @@ $session = SessionWrapperFactory::getInstance()->getActiveSession();
             'id' => OEGlobalsBag::getInstance()->getWebRoot() . '/interface/new/new.php',
             'acl' => ['patients', 'demo', ['write', 'addonly']]
         ]));
+
+        $event->setPrimaryMenuItem(new BaseMenuItem([
+            'displayText' => xl('Delete All Patients'),
+            'linkClassList' => ['text-danger', 'fw-bold'],
+            'id' => OEGlobalsBag::getInstance()->getWebRoot() . '/interface/main/finder/delete_all_patients.php',
+            'acl' => ['admin', 'super']
+        ]));
     });
     ?>
 </head>
