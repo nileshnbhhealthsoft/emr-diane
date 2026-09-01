@@ -15,7 +15,7 @@
  * - Touch and mouse event support
  *
  * @package OpenEMR
- * @author Antigravity AI
+ * @author  Nilesh Hake <nilesh.hake@nbhhealthsoft.com>
  */
 
 (function (window) {

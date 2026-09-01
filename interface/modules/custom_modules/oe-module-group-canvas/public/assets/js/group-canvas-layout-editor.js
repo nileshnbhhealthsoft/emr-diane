@@ -5,7 +5,7 @@
  * for clinical forms (LBF layouts) in the group header toolbar area.
  *
  * @package OpenEMR
- * @author Antigravity AI
+ * @author  Nilesh Hake <nilesh.hake@nbhhealthsoft.com>
  */
 
 (function ($) {

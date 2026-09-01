@@ -1,3 +1,8 @@
+--
+-- Group Header Canvas & Annotation Module Database Tables
+-- Author: Nilesh Hake <nilesh.hake@nbhhealthsoft.com>
+--
+
 #IfNotTable module_group_canvas_config
 CREATE TABLE IF NOT EXISTS `module_group_canvas_config` (
     `id` INT NOT NULL PRIMARY KEY AUTO_INCREMENT,

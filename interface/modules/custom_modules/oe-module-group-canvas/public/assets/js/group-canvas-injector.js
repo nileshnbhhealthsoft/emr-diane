@@ -5,7 +5,7 @@
  * and Visit Summary (forms.php / report.php), and manages the interactive Canvas Modal Lifecycle.
  *
  * @package OpenEMR
- * @author Antigravity AI
+ * @author  Nilesh Hake <nilesh.hake@nbhhealthsoft.com>
  */
 
 (function ($) {
