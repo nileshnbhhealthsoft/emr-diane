@@ -1,0 +1,618 @@
+/**
+ * group-canvas.css
+ *
+ * Styles for Group Header Canvas Button, Inline Image Display Card,
+ * Visit Summary (forms.php / report.php) Integration,
+ * and Interactive Modal Drawing / Annotation Engine
+ *
+ * @package OpenEMR
+ * @author Antigravity AI
+ */
+
+/* ==========================================================================
+   Group Header Injected Button & Badges (Encounter / Layout Forms)
+   ========================================================================== */
+.oe-group-canvas-wrapper {
+    display: inline-flex;
+    align-items: center;
+    margin-left: 12px;
+    vertical-align: middle;
+    position: relative;
+    z-index: 10;
+}
+
+.oe-group-canvas-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: linear-gradient(135deg, #0d6efd, #0b5ed7);
+    color: #ffffff !important;
+    border: 1px solid #0a58ca;
+    border-radius: 5px;
+    padding: 3px 10px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    text-decoration: none !important;
+    cursor: pointer;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+    transition: all 0.18s ease-in-out;
+}
+
+.oe-group-canvas-btn:hover {
+    background: linear-gradient(135deg, #0b5ed7, #084298);
+    color: #ffffff !important;
+    transform: translateY(-1px);
+    box-shadow: 0 3px 7px rgba(0, 0, 0, 0.22);
+}
+
+.oe-group-canvas-btn.has-saved-data {
+    background: linear-gradient(135deg, #198754, #157347);
+    border-color: #146c43;
+}
+
+.oe-group-canvas-btn.has-saved-data:hover {
+    background: linear-gradient(135deg, #157347, #0f5132);
+}
+
+.oe-group-canvas-badge {
+    background-color: #ffc107;
+    color: #212529;
+    font-size: 0.68rem;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 10px;
+    margin-left: 3px;
+}
+
+/* ==========================================================================
+   Visit Summary (forms.php / report.php) Integration Styles
+   ========================================================================== */
+.oe-visit-summary-canvas-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.82rem !important;
+    font-weight: 600 !important;
+    color: #0d6efd !important;
+    background: #f0f7ff;
+    border: 1px solid #cce5ff !important;
+    border-radius: 4px;
+    padding: 3px 9px !important;
+    text-decoration: none !important;
+    transition: all 0.18s ease-in-out;
+}
+
+.oe-visit-summary-canvas-btn:hover {
+    background: #0d6efd;
+    color: #ffffff !important;
+    border-color: #0a58ca !important;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 6px rgba(13, 110, 253, 0.25);
+}
+
+.oe-visit-summary-canvas-btn:hover i {
+    color: #ffffff !important;
+}
+
+.oe-visit-summary-canvas-btn .badge {
+    font-size: 0.68rem;
+    padding: 2px 6px;
+    font-weight: 700;
+}
+
+.oe-visit-summary-card {
+    border-left: 4px solid #0d6efd !important;
+    background: linear-gradient(to right, #fbfcfe, #ffffff) !important;
+    margin: 12px 0 16px 0 !important;
+    max-width: 650px;
+}
+
+/* ==========================================================================
+   Group Encounter Inline Display Image Card
+   ========================================================================== */
+.oe-group-canvas-image-card {
+    background: #ffffff;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    margin: 10px 0 14px 0;
+    padding: 8px 12px 12px 12px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+    max-width: 600px;
+    transition: box-shadow 0.2s ease, border-color 0.2s ease;
+    cursor: pointer;
+}
+
+.oe-group-canvas-image-card:hover {
+    border-color: #0d6efd;
+    box-shadow: 0 4px 14px rgba(13, 110, 253, 0.18);
+}
+
+.oe-card-top-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid #f1f3f5;
+}
+
+.oe-card-title {
+    font-weight: 700;
+    font-size: 0.88rem;
+    color: #343a40;
+    display: flex;
+    align-items: center;
+}
+
+.oe-card-meta {
+    display: flex;
+    align-items: center;
+}
+
+.oe-card-badge {
+    font-size: 0.72rem;
+    font-weight: 600;
+    padding: 4px 8px;
+    border-radius: 4px;
+}
+
+.oe-card-open-canvas-btn {
+    font-size: 0.75rem !important;
+    padding: 2px 8px !important;
+    font-weight: 600 !important;
+}
+
+.oe-card-image-wrapper {
+    position: relative;
+    background: #f8f9fa;
+    border-radius: 6px;
+    overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border: 1px solid #e9ecef;
+    min-height: 140px;
+    max-height: 320px;
+}
+
+.oe-group-display-img {
+    max-width: 100%;
+    max-height: 300px;
+    object-fit: contain;
+    display: block;
+    transition: transform 0.2s ease;
+}
+
+.oe-card-image-wrapper:hover .oe-group-display-img {
+    transform: scale(1.02);
+}
+
+.oe-card-hover-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(13, 110, 253, 0.75);
+    color: #ffffff;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.oe-card-image-wrapper:hover .oe-card-hover-overlay {
+    opacity: 1;
+}
+
+.oe-card-overlay-content {
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    font-size: 0.95rem;
+}
+
+/* ==========================================================================
+   Modal Overlay & Container
+   ========================================================================== */
+.oe-canvas-modal-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(3px);
+    z-index: 999999;
+    align-items: center;
+    justify-content: center;
+    padding: 15px;
+    box-sizing: border-box;
+}
+
+.oe-canvas-modal-overlay.active {
+    display: flex;
+}
+
+.oe-canvas-modal-container {
+    background: #ffffff;
+    border-radius: 10px;
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.4);
+    display: flex;
+    flex-direction: column;
+    max-width: 96vw;
+    max-height: 94vh;
+    overflow: hidden;
+    animation: oeCanvasModalZoom 0.2s ease-out;
+}
+
+@keyframes oeCanvasModalZoom {
+    from {
+        opacity: 0;
+        transform: scale(0.96);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.oe-canvas-modal-header {
+    background: #f8f9fa;
+    border-bottom: 1px solid #dee2e6;
+    padding: 12px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.oe-canvas-modal-title {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: #212529;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.oe-canvas-modal-close {
+    background: transparent;
+    border: none;
+    font-size: 1.6rem;
+    color: #6c757d;
+    cursor: pointer;
+    padding: 0 5px;
+    line-height: 1;
+    transition: color 0.15s;
+}
+
+.oe-canvas-modal-close:hover {
+    color: #dc3545;
+}
+
+/* ==========================================================================
+   Drawing Toolbar & Swatches
+   ========================================================================== */
+.oe-canvas-toolbar {
+    background: #f1f3f5;
+    border-bottom: 1px solid #e9ecef;
+    padding: 7px 16px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.88rem;
+}
+
+.oe-canvas-tool-group {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    background: #ffffff;
+    padding: 4px 6px;
+    border-radius: 6px;
+    border: 1px solid #ced4da;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.oe-tool-btn {
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    padding: 4px 9px;
+    font-size: 0.84rem;
+    cursor: pointer;
+    color: #495057;
+    transition: all 0.15s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.oe-tool-btn:hover {
+    background: #e9ecef;
+    color: #212529;
+}
+
+.oe-tool-btn.active {
+    background: #0d6efd;
+    color: #ffffff;
+    border-color: #0a58ca;
+    font-weight: 600;
+}
+
+.oe-color-swatch {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    border: 2px solid #ffffff;
+    cursor: pointer;
+    box-shadow: 0 0 0 1px #ced4da;
+    display: inline-block;
+    transition: transform 0.12s;
+}
+
+.oe-color-swatch:hover {
+    transform: scale(1.25);
+}
+
+.oe-color-swatch.active {
+    box-shadow: 0 0 0 2.5px #0d6efd;
+    transform: scale(1.2);
+}
+
+.oe-toolbar-select {
+    width: auto;
+    height: 28px;
+    padding: 2px 6px;
+    font-size: 0.82rem;
+    border-radius: 4px;
+}
+
+/* ==========================================================================
+   In-Place Floating Text Annotation Box
+   ========================================================================== */
+.oe-canvas-inplace-text-box {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    background: #ffffff;
+    padding: 4px 6px;
+    border-radius: 6px;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.28);
+    border: 2px solid #0d6efd;
+    animation: oeCanvasModalZoom 0.15s ease-out;
+}
+
+.oe-canvas-text-input {
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    padding: 4px 8px;
+    font-weight: 700;
+    outline: none;
+    min-width: 180px;
+}
+
+.oe-canvas-text-input:focus {
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 2px rgba(13, 110, 253, 0.25);
+}
+
+.oe-canvas-text-submit-btn,
+.oe-canvas-text-cancel-btn {
+    padding: 3px 8px;
+    font-size: 0.85rem;
+    height: 28px;
+}
+
+.oe-canvas-top-save-btn,
+.oe-canvas-toolbar-save-btn {
+    box-shadow: 0 2px 5px rgba(25, 135, 84, 0.35);
+    transition: all 0.18s ease-in-out;
+}
+
+.oe-canvas-top-save-btn:hover,
+.oe-canvas-toolbar-save-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 10px rgba(25, 135, 84, 0.45);
+}
+
+/* ==========================================================================
+   Modal Canvas Viewport & Footer
+   ========================================================================== */
+.oe-canvas-modal-header,
+.oe-canvas-toolbar,
+.oe-canvas-modal-footer {
+    flex-shrink: 0;
+}
+
+.oe-canvas-modal-body {
+    padding: 14px;
+    overflow: auto;
+    background: #495057;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex: 1 1 auto;
+    min-height: 0;
+}
+
+.oe-canvas-viewport {
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
+    background: #ffffff;
+    border-radius: 4px;
+    overflow: hidden;
+    margin: auto;
+}
+
+.oe-canvas-modal-footer {
+    background: #f8f9fa;
+    border-top: 1px solid #dee2e6;
+    padding: 12px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.oe-canvas-status-msg {
+    font-weight: 600;
+    font-size: 0.88rem;
+}
+
+/* ==========================================================================
+   Layout Editor (edit_layout.php) Injected Canvas Button & Config Modal
+   ========================================================================== */
+.oe-layout-canvas-group {
+    display: inline-flex;
+    align-items: center;
+    vertical-align: middle;
+}
+
+.oe-btn-layout-canvas {
+    font-weight: 600;
+    font-size: 0.82rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.18s ease-in-out;
+}
+
+.oe-btn-layout-canvas:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
+}
+
+.oe-image-status-badge {
+    font-size: 0.72rem;
+    padding: 3px 6px;
+    border-radius: 4px;
+}
+
+.oe-layout-canvas-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(0, 0, 0, 0.65);
+    backdrop-filter: blur(2px);
+    z-index: 999999;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+.oe-layout-canvas-overlay.active {
+    display: flex;
+}
+
+.oe-layout-canvas-modal {
+    background: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 12px 36px rgba(0, 0, 0, 0.3);
+    width: 100%;
+    max-width: 650px;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    animation: oeCanvasModalZoom 0.2s ease-out;
+}
+
+.oe-layout-canvas-modal-header {
+    background: #f8f9fa;
+    border-bottom: 1px solid #dee2e6;
+    padding: 12px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.oe-layout-canvas-modal-title {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: #212529;
+    margin: 0;
+    display: flex;
+    align-items: center;
+}
+
+.oe-layout-canvas-close {
+    background: transparent;
+    border: none;
+    font-size: 1.5rem;
+    color: #6c757d;
+    cursor: pointer;
+    line-height: 1;
+}
+
+.oe-layout-canvas-close:hover {
+    color: #dc3545;
+}
+
+.oe-layout-canvas-modal-body {
+    padding: 20px;
+    overflow-y: auto;
+}
+
+.oe-layout-canvas-modal-footer {
+    background: #f8f9fa;
+    border-top: 1px solid #dee2e6;
+    padding: 12px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.oe-image-preview-card {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+    padding: 10px;
+}
+
+.oe-image-preview-wrapper {
+    background: #e9ecef;
+    border-radius: 4px;
+    padding: 8px;
+    text-align: center;
+    max-height: 200px;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.oe-image-preview-wrapper img {
+    max-width: 100%;
+    max-height: 180px;
+    object-fit: contain;
+    border-radius: 3px;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
+}
+
+.oe-file-dropzone {
+    border: 2px dashed #ced4da;
+    border-radius: 6px;
+    background: #fafbfc;
+    padding: 24px 16px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.oe-file-dropzone:hover,
+.oe-file-dropzone.dragover {
+    border-color: #0d6efd;
+    background: #f0f7ff;
+}
+
+.cursor-pointer {
+    cursor: pointer;
+}
