@@ -19,14 +19,31 @@ use OpenEMR\Modules\GroupCanvas\Controller\GroupCanvasApiController;
 header('Content-Type: application/json');
 
 $session = SessionWrapperFactory::getInstance()->getActiveSession();
-$pid = (int)($_GET['pid'] ?? ($session->get('pid') ?? 0));
-$encounter = (int)($_GET['encounter'] ?? ($session->get('encounter') ?? 0));
 $formId = trim((string)($_GET['form_id'] ?? ''));
 $groupId = trim((string)($_GET['group_id'] ?? ''));
-$formInstanceId = (int)($_GET['form_instance_id'] ?? 0);
+$formInstanceId = (int)($_GET['form_instance_id'] ?? ($_GET['id'] ?? ($_GET['formid'] ?? 0)));
+$pid = !empty($_GET['pid']) ? (int)$_GET['pid'] : (int)($session->get('pid') ?? ($_SESSION['pid'] ?? ($GLOBALS['pid'] ?? 0)));
+$encounter = !empty($_GET['encounter']) ? (int)$_GET['encounter'] : (int)($session->get('encounter') ?? ($_SESSION['encounter'] ?? ($GLOBALS['encounter'] ?? 0)));
 
-if ($pid <= 0 || empty($formId) || empty($groupId)) {
-    echo json_encode(['success' => false, 'message' => xl('Missing required parameters')]);
+// If form_instance_id is provided and pid or encounter is missing, resolve from OpenEMR forms table
+if ($formInstanceId > 0 && ($pid <= 0 || $encounter <= 0) && !empty($formId)) {
+    $altFid = str_starts_with($formId, 'LBF_') ? substr($formId, 4) : 'LBF_' . $formId;
+    $frow = sqlQuery(
+        "SELECT `pid`, `encounter` FROM `forms` WHERE `form_id` = ? AND (`formdir` = ? OR `formdir` = ?) AND `deleted` = 0 LIMIT 1",
+        [$formInstanceId, $formId, $altFid]
+    );
+    if (!empty($frow['pid'])) {
+        if ($pid <= 0) {
+            $pid = (int)$frow['pid'];
+        }
+        if ($encounter <= 0) {
+            $encounter = (int)$frow['encounter'];
+        }
+    }
+}
+
+if (($pid <= 0 && $formInstanceId <= 0) || empty($formId) || empty($groupId)) {
+    echo json_encode(['success' => false, 'message' => xl('Missing required parameters'), 'pid' => $pid, 'encounter' => $encounter, 'form_instance_id' => $formInstanceId]);
     exit;
 }
 

@@ -263,7 +263,14 @@
     };
 
     GroupCanvasDrawer.prototype.renderSmoothStroke = function (ctx, pts) {
-        if (pts.length < 2) return;
+        if (!pts || pts.length === 0) return;
+
+        if (pts.length === 1) {
+            ctx.beginPath();
+            ctx.arc(pts[0].x, pts[0].y, Math.max(1, ctx.lineWidth / 2), 0, Math.PI * 2);
+            ctx.fill();
+            return;
+        }
 
         ctx.beginPath();
         ctx.moveTo(pts[0].x, pts[0].y);
@@ -595,6 +602,23 @@
                     data = JSON.parse(data);
                 } catch (e2) {}
             }
+            if (data && typeof data === 'object' && !Array.isArray(data)) {
+                if (Array.isArray(data.strokes)) {
+                    data = data.strokes;
+                } else if (Array.isArray(data.history)) {
+                    data = data.history;
+                } else {
+                    var arr = [];
+                    Object.keys(data).forEach(function (k) {
+                        if (!isNaN(parseInt(k, 10)) && data[k] && typeof data[k] === 'object') {
+                            arr.push(data[k]);
+                        }
+                    });
+                    if (arr.length > 0) {
+                        data = arr;
+                    }
+                }
+            }
             if (Array.isArray(data)) {
                 this.history = data;
                 this.redoStack = [];
@@ -604,6 +628,19 @@
         } catch (e) {
             console.error('Failed to parse canvas drawing JSON:', e);
         }
+    };
+
+    GroupCanvasDrawer.prototype.loadDrawingImage = function (pngDataUrl, callback) {
+        if (!pngDataUrl) return;
+        var self = this;
+        var img = new Image();
+        img.crossOrigin = 'Anonymous';
+        img.onload = function () {
+            self.drawCtx.clearRect(0, 0, self.width, self.height);
+            self.drawCtx.drawImage(img, 0, 0, self.width, self.height);
+            if (typeof callback === 'function') callback();
+        };
+        img.src = pngDataUrl;
     };
 
     GroupCanvasDrawer.prototype.getPNG = function () {
