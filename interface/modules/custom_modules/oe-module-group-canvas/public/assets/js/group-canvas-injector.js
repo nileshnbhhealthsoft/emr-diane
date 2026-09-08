@@ -54,37 +54,37 @@
 
             // 2. Detect Patient ID (PID)
             var detectedPid = $('input[name="pid"], input[name="form_pid"], input[name="patientid"], input[name="pId"]').val() ||
-                              urlParams.get('patientid') ||
-                              urlParams.get('pid') ||
-                              (typeof pid !== 'undefined' ? pid : 0) ||
-                              (typeof window.pid !== 'undefined' ? window.pid : 0) ||
-                              (window.parent && typeof window.parent.pid !== 'undefined' ? window.parent.pid : 0) ||
-                              (window.top && typeof window.top.pid !== 'undefined' ? window.top.pid : 0) ||
-                              (window.top && typeof window.top.patient_id !== 'undefined' ? window.top.patient_id : 0) ||
-                              (window.top && typeof window.top.current_pid !== 'undefined' ? window.top.current_pid : 0);
+                urlParams.get('patientid') ||
+                urlParams.get('pid') ||
+                (typeof pid !== 'undefined' ? pid : 0) ||
+                (typeof window.pid !== 'undefined' ? window.pid : 0) ||
+                (window.parent && typeof window.parent.pid !== 'undefined' ? window.parent.pid : 0) ||
+                (window.top && typeof window.top.pid !== 'undefined' ? window.top.pid : 0) ||
+                (window.top && typeof window.top.patient_id !== 'undefined' ? window.top.patient_id : 0) ||
+                (window.top && typeof window.top.current_pid !== 'undefined' ? window.top.current_pid : 0);
             this.pid = parseInt(detectedPid, 10) || 0;
 
             // 3. Detect Encounter ID
             var detectedEnc = $('input[name="encounter"], input[name="form_encounter"], input[name="visitid"], input[name="encounter_id"]').val() ||
-                              urlParams.get('visitid') ||
-                              urlParams.get('encounter') ||
-                              (typeof encounter !== 'undefined' ? encounter : 0) ||
-                              (typeof window.encounter !== 'undefined' ? window.encounter : 0) ||
-                              (window.parent && typeof window.parent.encounter !== 'undefined' ? window.parent.encounter : 0) ||
-                              (window.top && typeof window.top.encounter !== 'undefined' ? window.top.encounter : 0) ||
-                              (window.top && typeof window.top.current_encounter !== 'undefined' ? window.top.current_encounter : 0) ||
-                              (window.top && typeof window.top.encounter_id !== 'undefined' ? window.top.encounter_id : 0);
+                urlParams.get('visitid') ||
+                urlParams.get('encounter') ||
+                (typeof encounter !== 'undefined' ? encounter : 0) ||
+                (typeof window.encounter !== 'undefined' ? window.encounter : 0) ||
+                (window.parent && typeof window.parent.encounter !== 'undefined' ? window.parent.encounter : 0) ||
+                (window.top && typeof window.top.encounter !== 'undefined' ? window.top.encounter : 0) ||
+                (window.top && typeof window.top.current_encounter !== 'undefined' ? window.top.current_encounter : 0) ||
+                (window.top && typeof window.top.encounter_id !== 'undefined' ? window.top.encounter_id : 0);
             this.encounter = parseInt(detectedEnc, 10) || 0;
 
             // 4. Detect Form ID for single-form mode
             this.formId = $('input[name="formname"]').val() ||
-                          $('input[name="form_id"]').val() ||
-                          $('input[name="layout_id"]').val() ||
-                          urlParams.get('formname') ||
-                          urlParams.get('form_id') ||
-                          urlParams.get('layout_id') ||
-                          urlParams.get('form') ||
-                          '';
+                $('input[name="form_id"]').val() ||
+                $('input[name="layout_id"]').val() ||
+                urlParams.get('formname') ||
+                urlParams.get('form_id') ||
+                urlParams.get('layout_id') ||
+                urlParams.get('form') ||
+                '';
 
             if (!this.formId && pathname.indexOf('demographics') !== -1) {
                 this.formId = 'DEM';
@@ -103,16 +103,36 @@
                 10
             ) || 0;
 
+            // 5b. Fallback: check form action URL parameters
+            var formAction = $('form').first().attr('action') || '';
+            if (formAction && formAction.indexOf('?') !== -1) {
+                try {
+                    var formActionParams = new URLSearchParams(formAction.substring(formAction.indexOf('?')));
+                    if (!this.formId) {
+                        this.formId = formActionParams.get('formname') || formActionParams.get('form_id') || formActionParams.get('layout_id') || formActionParams.get('form') || '';
+                    }
+                    if (!this.formInstanceId) {
+                        this.formInstanceId = parseInt(formActionParams.get('id') || formActionParams.get('formid') || '0', 10) || 0;
+                    }
+                    if (!this.encounter) {
+                        this.encounter = parseInt(formActionParams.get('visitid') || formActionParams.get('encounter') || '0', 10) || 0;
+                    }
+                    if (!this.pid) {
+                        this.pid = parseInt(formActionParams.get('pid') || formActionParams.get('patientid') || '0', 10) || 0;
+                    }
+                } catch (eAction) { }
+            }
+
             // 6. CSRF Token
             this.csrfToken = $('input[name="csrf_token_form"]').val() ||
-                             $('input[name="csrf_token"]').val() ||
-                             (typeof csrf_token_form !== 'undefined' ? csrf_token_form : '') ||
-                             (window.parent && typeof window.parent.csrf_token_form !== 'undefined' ? window.parent.csrf_token_form : '') ||
-                             (window.top && typeof window.top.csrf_token_form !== 'undefined' ? window.top.csrf_token_form : '');
+                $('input[name="csrf_token"]').val() ||
+                (typeof csrf_token_form !== 'undefined' ? csrf_token_form : '') ||
+                (window.parent && typeof window.parent.csrf_token_form !== 'undefined' ? window.parent.csrf_token_form : '') ||
+                (window.top && typeof window.top.csrf_token_form !== 'undefined' ? window.top.csrf_token_form : '');
 
             // 7. Base URL of module
             var webroot = (typeof top.webroot !== 'undefined' ? top.webroot : '') ||
-                          (typeof window.webroot !== 'undefined' ? window.webroot : '') || '';
+                (typeof window.webroot !== 'undefined' ? window.webroot : '') || '';
             if (!webroot) {
                 var match = window.location.pathname.match(/^(\/[^\/]+)/);
                 webroot = match ? match[1] : '';
@@ -132,12 +152,19 @@
                 type: 'GET',
                 data: {
                     form_id: formId,
+                    form_instance_id: this.formInstanceId,
                     pid: this.pid,
                     encounter: this.encounter
                 },
                 dataType: 'json',
                 success: function (res) {
                     if (res && res.success && Array.isArray(res.configs)) {
+                        if (res.pid && (!self.pid || self.pid <= 0)) {
+                            self.pid = parseInt(res.pid, 10) || self.pid;
+                        }
+                        if (res.encounter && (!self.encounter || self.encounter <= 0)) {
+                            self.encounter = parseInt(res.encounter, 10) || self.encounter;
+                        }
                         self.formConfigs[formId] = res.configs;
                         self.injectSingleFormComponents(formId, res.configs);
                         self.bindFormSubmitSync(formId);
@@ -168,7 +195,8 @@
                 // 2. Inject Compact Canvas Button into Group Header
                 var targetHeader = self.findGroupHeaderElement(formId, groupId);
                 if (targetHeader && targetHeader.length) {
-                    if (!targetHeader.find('.oe-group-canvas-wrapper[data-group="' + groupId + '"]').length) {
+                    if (!targetHeader.find('.oe-group-canvas-wrapper[data-group="' + groupId + '"]').length &&
+                        !targetHeader.parent().find('.oe-group-canvas-wrapper[data-group="' + groupId + '"]').length) {
                         var btnClass = 'oe-group-canvas-btn' + (hasDrawing ? ' has-saved-data' : '');
                         var icon = hasDrawing ? 'fa-check-circle' : 'fa-paint-brush';
                         var badgeHtml = hasDrawing ? '<span class="oe-group-canvas-badge">Saved</span>' : '';
@@ -201,7 +229,11 @@
                             });
                         });
 
-                        targetHeader.append(wrapper);
+                        if (targetHeader.is('label')) {
+                            targetHeader.after(wrapper);
+                        } else {
+                            targetHeader.append(wrapper);
+                        }
                     }
                 }
 
@@ -214,29 +246,29 @@
                         : '<span class="badge badge-info oe-card-badge"><i class="fa fa-image mr-1"></i> Diagram Template</span>';
 
                     var imageCard = $(
-                        '<div class="oe-group-canvas-image-card" id="' + cardId + '" data-form="' + formId + '" data-group="' + groupId + '">' +
-                        '  <div class="oe-card-top-bar">' +
-                        '    <div class="oe-card-title">' +
-                        '      <i class="fa fa-palette text-primary mr-1"></i>' +
-                        '      <span>' + self.escapeHtml(btnLabel) + '</span>' +
-                        '    </div>' +
-                        '    <div class="oe-card-meta">' +
-                        '      <span id="oe_card_badge_' + formId + '_' + groupId + '">' + cardStatusBadge + '</span>' +
-                        '      <button type="button" class="btn btn-sm btn-primary ml-2 oe-card-open-canvas-btn" data-form="' + formId + '" data-group="' + groupId + '">' +
-                        '        <i class="fa fa-pen-fancy mr-1"></i> Canvas' +
-                        '      </button>' +
-                        '    </div>' +
-                        '  </div>' +
-                        '  <div class="oe-card-image-wrapper" title="Click to open canvas and annotate">' +
-                        '    <img src="' + displayImgUrl + '" class="oe-group-display-img" id="oe_group_display_img_' + formId + '_' + groupId + '" alt="' + self.escapeHtml(btnLabel) + '" />' +
-                        '    <div class="oe-card-hover-overlay">' +
-                        '      <div class="oe-card-overlay-content">' +
-                        '        <i class="fa fa-expand-arrows-alt fa-2x mb-1"></i>' +
-                        '        <span class="font-weight-bold">Click to Open Canvas & Annotate</span>' +
-                        '      </div>' +
-                        '    </div>' +
-                        '  </div>' +
-                        '</div>'
+                        //'<div class="oe-group-canvas-image-card" id="' + cardId + '" data-form="' + formId + '" data-group="' + groupId + '">' +
+                        //'  <div class="oe-card-top-bar">' +
+                        //'    <div class="oe-card-title">' +
+                        //'      <i class="fa fa-palette text-primary mr-1"></i>' +
+                        //'      <span>' + self.escapeHtml(btnLabel) + '</span>' +
+                        //'    </div>' +
+                        //'    <div class="oe-card-meta">' +
+                        //'      <span id="oe_card_badge_' + formId + '_' + groupId + '">' + cardStatusBadge + '</span>' +
+                        //'      <button type="button" class="btn btn-sm btn-primary ml-2 oe-card-open-canvas-btn" data-form="' + formId + '" data-group="' + groupId + '">' +
+                        //'        <i class="fa fa-pen-fancy mr-1"></i> Canvas' +
+                        //'      </button>' +
+                        //'    </div>' +
+                        //'  </div>' +
+                        //'  <div class="oe-card-image-wrapper" title="Click to open canvas and annotate">' +
+                        //'    <img src="' + displayImgUrl + '" class="oe-group-display-img" id="oe_group_display_img_' + formId + '_' + groupId + '" alt="' + self.escapeHtml(btnLabel) + '" />' +
+                        //'    <div class="oe-card-hover-overlay">' +
+                        //'      <div class="oe-card-overlay-content">' +
+                        //'        <i class="fa fa-expand-arrows-alt fa-2x mb-1"></i>' +
+                        //'        <span class="font-weight-bold">Click to Open Canvas & Annotate</span>' +
+                        //'      </div>' +
+                        //'    </div>' +
+                        //'  </div>' +
+                        //'</div>'
                     );
 
                     imageCard.on('click', function (e) {
@@ -355,36 +387,38 @@
 
         injectVisitSummaryComponents: function (formdir, instanceId, holder, configs) {
             var self = this;
-            var headerControls = holder.find('.form_header_controls');
-            var formDetail = holder.find('.form-detail');
 
             configs.forEach(function (cfg) {
                 if (!cfg.has_image || !cfg.background_image_url) {
                     return;
                 }
 
-                var groupId = cfg.group_id;
-                var btnLabel = cfg.button_label || 'Canvas Diagram';
-                var hasDrawing = cfg.has_drawing;
-                var displayImgUrl = (hasDrawing && cfg.drawing_png) ? cfg.drawing_png : cfg.background_image_url;
+                var groupId = String(cfg.group_id);
+                var btnLabel = cfg.button_label || 'Display Canvas';
+                var hasDrawing = !!cfg.has_drawing;
 
-                // 1. Inject Canvas Button into the Form Header Controls
-                if (headerControls.length) {
-                    var btnKey = 'oe_vs_btn_' + formdir + '_' + groupId;
-                    if (!$('#' + btnKey).length) {
-                        var iconClass = hasDrawing ? 'fa-check-circle text-success' : 'fa-palette text-primary';
-                        var badgeHtml = hasDrawing ? '<span class="badge badge-success ml-1">Annotated</span>' : '';
+                // 1. Locate the Group Header element in Encounter Summary
+                var targetHeader = self.findSummaryGroupHeaderElement(holder, formdir, cfg);
 
-                        var vsBtn = $(
-                            '<a href="#" class="btn btn-text btn-sm oe-visit-summary-canvas-btn mr-1" id="' + btnKey + '" ' +
-                            '   title="View and Annotate ' + self.escapeHtml(btnLabel) + '">' +
-                            '  <i class="fa ' + iconClass + ' mr-1"></i>' +
-                            '  <span>' + self.escapeHtml(btnLabel) + '</span> ' +
-                            '  ' + badgeHtml +
-                            '</a>'
+                // 2. Inject Display Canvas Button directly next to the Group Header
+                if (targetHeader && targetHeader.length) {
+                    var btnKey = 'oe_summary_btn_' + formdir + '_' + groupId;
+                    if (!targetHeader.find('#' + btnKey).length && !targetHeader.find('.oe-summary-canvas-wrapper[data-group="' + groupId + '"]').length) {
+                        var btnClass = 'oe-group-canvas-btn oe-summary-group-canvas-btn' + (hasDrawing ? ' has-saved-data' : '');
+                        var icon = hasDrawing ? 'fa-check-circle' : 'fa-image';
+                        var badgeHtml = hasDrawing ? '<span class="oe-group-canvas-badge">Saved</span>' : '';
+
+                        var wrapper = $(
+                            '<span class="oe-group-canvas-wrapper oe-summary-canvas-wrapper ml-2" data-form="' + formdir + '" data-group="' + groupId + '">' +
+                            '  <button type="button" class="' + btnClass + '" id="' + btnKey + '" data-form="' + formdir + '" data-group="' + groupId + '" title="View canvas diagram for ' + self.escapeHtml(btnLabel) + '">' +
+                            '    <i class="fa ' + icon + ' mr-1"></i>' +
+                            '    <span>' + self.escapeHtml(btnLabel) + '</span>' +
+                            '    ' + badgeHtml +
+                            '  </button>' +
+                            '</span>'
                         );
 
-                        vsBtn.on('click', function (e) {
+                        wrapper.find('button').on('click', function (e) {
                             e.preventDefault();
                             e.stopPropagation();
                             self.openModal({
@@ -393,75 +427,93 @@
                                 form_instance_id: instanceId,
                                 pid: self.pid,
                                 encounter: self.encounter,
-                                button_label: cfg.button_label,
+                                button_label: cfg.button_label || 'Display Canvas',
                                 background_image_url: cfg.background_image_url,
                                 canvas_width: cfg.canvas_width,
                                 canvas_height: cfg.canvas_height,
                                 has_drawing: cfg.has_drawing,
-                                drawing_png: cfg.drawing_png
+                                drawing_png: cfg.drawing_png,
+                                readOnly: true
                             });
                         });
 
-                        headerControls.prepend(vsBtn);
-                    }
-                }
-
-                // 2. Inject Display Card inside the Form Detail / Report view
-                if (formDetail.length) {
-                    var cardKey = 'oe_vs_card_' + formdir + '_' + groupId;
-                    if (!$('#' + cardKey).length) {
-                        var cardBadge = hasDrawing
-                            ? '<span class="badge badge-success oe-card-badge"><i class="fa fa-check-circle mr-1"></i> Patient Annotation Saved</span>'
-                            : '<span class="badge badge-secondary oe-card-badge"><i class="fa fa-image mr-1"></i> Diagram Template</span>';
-
-                        var vsCard = $(
-                            '<div class="oe-group-canvas-image-card oe-visit-summary-card" id="' + cardKey + '" data-form="' + formdir + '" data-group="' + groupId + '">' +
-                            '  <div class="oe-card-top-bar">' +
-                            '    <div class="oe-card-title">' +
-                            '      <i class="fa fa-palette text-primary mr-1"></i>' +
-                            '      <span>' + self.escapeHtml(btnLabel) + '</span>' +
-                            '    </div>' +
-                            '    <div class="oe-card-meta">' +
-                            '      <span id="oe_card_badge_' + formdir + '_' + groupId + '">' + cardBadge + '</span>' +
-                            '      <button type="button" class="btn btn-sm btn-primary ml-2 oe-card-open-canvas-btn">' +
-                            '        <i class="fa fa-expand-arrows-alt mr-1"></i> View / Annotate' +
-                            '      </button>' +
-                            '    </div>' +
-                            '  </div>' +
-                            '  <div class="oe-card-image-wrapper" title="Click to view full canvas in popup">' +
-                            '    <img src="' + displayImgUrl + '" class="oe-group-display-img" id="oe_group_display_img_' + formdir + '_' + groupId + '" alt="' + self.escapeHtml(btnLabel) + '" />' +
-                            '    <div class="oe-card-hover-overlay">' +
-                            '      <div class="oe-card-overlay-content">' +
-                            '        <i class="fa fa-expand fa-2x mb-1"></i>' +
-                            '        <span class="font-weight-bold">Click to Open & View Canvas</span>' +
-                            '      </div>' +
-                            '    </div>' +
-                            '  </div>' +
-                            '</div>'
-                        );
-
-                        vsCard.on('click', function (e) {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            self.openModal({
-                                form_id: formdir,
-                                group_id: groupId,
-                                form_instance_id: instanceId,
-                                pid: self.pid,
-                                encounter: self.encounter,
-                                button_label: cfg.button_label,
-                                background_image_url: cfg.background_image_url,
-                                canvas_width: cfg.canvas_width,
-                                canvas_height: cfg.canvas_height,
-                                has_drawing: cfg.has_drawing,
-                                drawing_png: cfg.drawing_png
-                            });
-                        });
-
-                        formDetail.first().prepend(vsCard);
+                        targetHeader.append(wrapper);
                     }
                 }
             });
+        },
+
+        findSummaryGroupHeaderElement: function (holder, formdir, cfg) {
+            var groupId = String(cfg.group_id || '').trim();
+            var groupTitle = String(cfg.group_title || '').trim().toLowerCase();
+            var groupSubtitle = String(cfg.group_subtitle || '').trim().toLowerCase();
+            var target = null;
+
+            var formDetail = holder.find('.form-detail');
+            var searchScope = formDetail.length ? formDetail : holder;
+
+            // 1. Check td.groupname, th.groupname, or .groupname matching groupTitle or groupSubtitle
+            var groupNameCells = searchScope.find('td.groupname, th.groupname, .groupname');
+            if (groupTitle && groupNameCells.length) {
+                groupNameCells.each(function () {
+                    if (target) return;
+                    var cell = $(this);
+                    var cellText = cell.clone().children('.oe-group-canvas-wrapper, .oe-summary-canvas-wrapper, button, span.oe-group-canvas-badge, .badge').remove().end().text().trim().toLowerCase();
+                    if (cellText === groupTitle || cellText.indexOf(groupTitle) === 0 || (groupSubtitle && cellText.indexOf(groupSubtitle) === 0)) {
+                        target = cell;
+                    }
+                });
+            }
+
+            if (target && target.length) return target;
+
+            // 2. Check other group headers (legend, h4, h5, h6, .card-header, span.bold, .group-header)
+            var otherHeaders = searchScope.find('.group-header, span.bold, label.bold, legend, h4, h5, h6, .card-header, .section-header');
+            if (groupTitle && otherHeaders.length) {
+                otherHeaders.each(function () {
+                    if (target) return;
+                    var el = $(this);
+                    var elText = el.clone().children('.oe-group-canvas-wrapper, .oe-summary-canvas-wrapper, button, span.oe-group-canvas-badge, .badge').remove().end().text().trim().toLowerCase();
+                    if (elText === groupTitle || elText.indexOf(groupTitle) === 0) {
+                        target = el;
+                    }
+                });
+            }
+
+            if (target && target.length) return target;
+
+            // 3. Check by form_cb_ input, div_grp, or data-group attributes
+            var cb = searchScope.find('input[name="form_cb_grp-' + formdir + '-' + groupId + '"], input[name*="form_cb_"][name$="-' + groupId + '"], input[name="form_cb_lbf' + groupId + '"]');
+            if (cb.length) {
+                target = cb.closest('label, span.bold, .group-header');
+                if (!target.length) target = cb.parent();
+                if (target.length) return target;
+            }
+
+            var lbfDiv = searchScope.find('#div_grp-' + formdir + '-' + groupId + ', #div_lbf' + groupId + ', [id$="-' + groupId + '"]').first();
+            if (lbfDiv.length) {
+                target = lbfDiv.prev('span, label, h4, h5, .card-header, legend');
+                if (!target.length) target = lbfDiv.find('.card-header, legend, h4, h5, .font-weight-bold').first();
+                if (target.length) return target;
+            }
+
+            // 4. Match by index/sequence if group_seq or numeric groupId is available
+            if (groupNameCells.length) {
+                var idx = parseInt(groupId, 10) - 1;
+                if (!isNaN(idx) && idx >= 0 && idx < groupNameCells.length) {
+                    return groupNameCells.eq(idx);
+                }
+                if (groupNameCells.length === 1) {
+                    return groupNameCells.first();
+                }
+            }
+
+            // 5. Fallback to first groupname cell
+            if (groupNameCells.length) {
+                return groupNameCells.first();
+            }
+
+            return null;
         },
 
         /* ==========================================================================
@@ -540,7 +592,7 @@
         ensureModalDOM: function () {
             if ($('#oe_canvas_modal_overlay').length) return;
 
-            var modalHtml = 
+            var modalHtml =
                 '<div id="oe_canvas_modal_overlay" class="oe-canvas-modal-overlay">' +
                 '  <div class="oe-canvas-modal-container">' +
                 '    <div class="oe-canvas-modal-header">' +
@@ -707,11 +759,63 @@
             var pid = context.pid || this.pid;
             var encounter = context.encounter || this.encounter;
             var instanceId = context.form_instance_id || this.formInstanceId || 0;
+            var isReadOnly = !!context.readOnly;
 
-            $('#oe_canvas_title_text').text(context.button_label || 'Annotate Diagram');
+            var titleText = context.button_label || 'Canvas Diagram';
+            if (isReadOnly) {
+                titleText += ' (View)';
+            }
+            $('#oe_canvas_title_text').text(titleText);
             $('#oe_canvas_group_indicator').text('Group ' + groupId + ' (' + formId + ')');
-            $('#oe_canvas_status').text('Loading drawing...').removeClass('text-success text-danger').addClass('text-muted');
+            $('#oe_canvas_status').text('Loading canvas diagram...').removeClass('text-success text-danger').addClass('text-muted');
+
+            if (isReadOnly) {
+                $('#oe_canvas_modal_overlay').addClass('oe-canvas-readonly');
+            } else {
+                $('#oe_canvas_modal_overlay').removeClass('oe-canvas-readonly');
+            }
+
             $('#oe_canvas_modal_overlay').addClass('active');
+
+            var container = $('#oe_canvas_container');
+            container.empty();
+
+            if (isReadOnly) {
+                this.activeDrawer = null;
+                var initialImg = (context.has_drawing && context.drawing_png) ? context.drawing_png : context.background_image_url;
+
+                container.html(
+                    '<div class="oe-canvas-view-wrapper">' +
+                    '  <img src="' + initialImg + '" class="oe-canvas-view-image" id="oe_canvas_view_image" alt="' + self.escapeHtml(context.button_label || 'Canvas Diagram') + '" />' +
+                    '</div>'
+                );
+
+                var getApiUrl = this.moduleBaseUrl + '/public/api/get_drawing.php';
+                $.ajax({
+                    url: getApiUrl,
+                    type: 'GET',
+                    data: {
+                        pid: pid,
+                        encounter: encounter,
+                        form_id: formId,
+                        group_id: groupId,
+                        form_instance_id: instanceId
+                    },
+                    dataType: 'json',
+                    success: function (res) {
+                        if (res && res.success && res.drawing && res.drawing.drawing_png) {
+                            $('#oe_canvas_view_image').attr('src', res.drawing.drawing_png);
+                            $('#oe_canvas_status').text('Saved canvas drawing displayed (View Only)').addClass('text-success');
+                        } else {
+                            $('#oe_canvas_status').text('Diagram template displayed (No annotations recorded)').addClass('text-muted');
+                        }
+                    },
+                    error: function () {
+                        $('#oe_canvas_status').text('Diagram displayed (View Only)').addClass('text-muted');
+                    }
+                });
+                return;
+            }
 
             var width = context.canvas_width || 800;
             var height = context.canvas_height || 600;
@@ -747,15 +851,36 @@
                 },
                 dataType: 'json',
                 success: function (res) {
-                    if (res && res.success && res.drawing && res.drawing.drawing_data) {
-                        self.activeDrawer.loadJSON(res.drawing.drawing_data);
+                    if (res && res.success && res.drawing) {
+                        if (res.pid && (!self.pid || self.pid <= 0)) {
+                            self.pid = parseInt(res.pid, 10) || self.pid;
+                        }
+                        if (res.encounter && (!self.encounter || self.encounter <= 0)) {
+                            self.encounter = parseInt(res.encounter, 10) || self.encounter;
+                        }
+                        if (res.drawing.drawing_data) {
+                            self.activeDrawer.loadJSON(res.drawing.drawing_data);
+                            $('#oe_canvas_status').text('Saved drawing loaded. You can modify or add annotations.').addClass('text-success');
+                        } else if (res.drawing.drawing_png) {
+                            self.activeDrawer.loadDrawingImage(res.drawing.drawing_png);
+                            $('#oe_canvas_status').text('Saved drawing loaded. You can modify or add annotations.').addClass('text-success');
+                        } else {
+                            $('#oe_canvas_status').text('Ready for new markings & text annotations.').addClass('text-muted');
+                        }
+                    } else if (context.drawing_png) {
+                        self.activeDrawer.loadDrawingImage(context.drawing_png);
                         $('#oe_canvas_status').text('Saved drawing loaded. You can modify or add annotations.').addClass('text-success');
                     } else {
                         $('#oe_canvas_status').text('Ready for new markings & text annotations.').addClass('text-muted');
                     }
                 },
                 error: function () {
-                    $('#oe_canvas_status').text('Ready.').addClass('text-muted');
+                    if (context.drawing_png) {
+                        self.activeDrawer.loadDrawingImage(context.drawing_png);
+                        $('#oe_canvas_status').text('Saved drawing loaded.').addClass('text-success');
+                    } else {
+                        $('#oe_canvas_status').text('Ready.').addClass('text-muted');
+                    }
                 }
             });
         },
@@ -803,30 +928,23 @@
                     if (res && res.success) {
                         statusMsg.text('Drawing saved successfully!').removeClass('text-muted').addClass('text-success');
 
-                        // 1. Update single-form header button state
-                        var btn = $('button.oe-group-canvas-btn[data-form="' + ctx.form_id + '"][data-group="' + ctx.group_id + '"], button.oe-group-canvas-btn[data-group="' + ctx.group_id + '"]');
-                        btn.addClass('has-saved-data');
-                        btn.find('i').removeClass('fa-paint-brush').addClass('fa-check-circle');
-                        if (!btn.find('.oe-group-canvas-badge').length) {
-                            btn.append('<span class="oe-group-canvas-badge">Saved</span>');
-                        }
-
-                        // 2. Update Visit Summary button state
-                        var vsBtn = $('#oe_vs_btn_' + ctx.form_id + '_' + ctx.group_id);
-                        if (vsBtn.length) {
-                            vsBtn.find('i').removeClass('fa-palette text-primary').addClass('fa-check-circle text-success');
-                            if (!vsBtn.find('.badge-success').length) {
-                                vsBtn.append('<span class="badge badge-success ml-1">Annotated</span>');
+                        // 1. Update single-form and visit summary header button states
+                        var allBtns = $('button.oe-group-canvas-btn[data-form="' + ctx.form_id + '"][data-group="' + ctx.group_id + '"], button.oe-group-canvas-btn[data-group="' + ctx.group_id + '"], #oe_summary_btn_' + ctx.form_id + '_' + ctx.group_id);
+                        allBtns.addClass('has-saved-data');
+                        allBtns.find('i').removeClass('fa-paint-brush fa-palette').addClass('fa-check-circle');
+                        allBtns.each(function () {
+                            if (!$(this).find('.oe-group-canvas-badge').length) {
+                                $(this).append('<span class="oe-group-canvas-badge">Saved</span>');
                             }
-                        }
+                        });
 
-                        // 3. Update displayed images on the page
-                        var displayImg = $('#oe_group_display_img_' + ctx.form_id + '_' + ctx.group_id + ', #oe_group_display_img_' + ctx.group_id);
+                        // 2. Update displayed images on the page
+                        var displayImg = $('img#oe_group_display_img_' + ctx.form_id + '_' + ctx.group_id + ', img#oe_group_display_img_' + ctx.group_id + ', img.oe-summary-display-img[data-form="' + ctx.form_id + '"][data-group="' + ctx.group_id + '"]');
                         if (displayImg.length) {
                             displayImg.attr('src', exportedPng);
                         }
 
-                        // 4. Update card badge
+                        // 3. Update card badge
                         var cardBadge = $('#oe_card_badge_' + ctx.form_id + '_' + ctx.group_id + ', #oe_card_badge_' + ctx.group_id);
                         if (cardBadge.length) {
                             cardBadge.html('<span class="badge badge-success oe-card-badge"><i class="fa fa-check-circle mr-1"></i> Annotated & Saved</span>');

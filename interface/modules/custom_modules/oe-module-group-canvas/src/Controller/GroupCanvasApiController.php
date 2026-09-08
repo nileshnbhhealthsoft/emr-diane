@@ -35,9 +35,10 @@ class GroupCanvasApiController
      * @param int $pid
      * @param int $encounter
      * @param bool $isAdmin
+     * @param int $formInstanceId
      * @return array
      */
-    public function getFormConfigs($formId, int $pid = 0, int $encounter = 0, bool $isAdmin = false): array
+    public function getFormConfigs($formId, int $pid = 0, int $encounter = 0, bool $isAdmin = false, int $formInstanceId = 0): array
     {
         $session = SessionWrapperFactory::getInstance()->getActiveSession();
         if ($pid <= 0 && $session->get('pid')) {
@@ -49,6 +50,24 @@ class GroupCanvasApiController
 
         $formIds = is_array($formId) ? $formId : array_filter(array_map('trim', explode(',', (string)$formId)));
 
+        // If form_instance_id is provided and pid or encounter is missing, resolve from OpenEMR forms table
+        if ($formInstanceId > 0 && ($pid <= 0 || $encounter <= 0) && !empty($formIds)) {
+            $firstFid = reset($formIds);
+            $altFid = str_starts_with($firstFid, 'LBF_') ? substr($firstFid, 4) : 'LBF_' . $firstFid;
+            $frow = sqlQuery(
+                "SELECT `pid`, `encounter` FROM `forms` WHERE `form_id` = ? AND (`formdir` = ? OR `formdir` = ?) AND `deleted` = 0 LIMIT 1",
+                [$formInstanceId, $firstFid, $altFid]
+            );
+            if (!empty($frow['pid'])) {
+                if ($pid <= 0) {
+                    $pid = (int)$frow['pid'];
+                }
+                if ($encounter <= 0) {
+                    $encounter = (int)$frow['encounter'];
+                }
+            }
+        }
+
         $webroot = OEGlobalsBag::getInstance()->getWebRoot();
         $siteId = $session->get('site_id') ?? 'default';
         $uploadUrl = $webroot . '/interface/modules/custom_modules/oe-module-group-canvas/public/uploads/';
@@ -59,8 +78,8 @@ class GroupCanvasApiController
         foreach ($formIds as $fId) {
             $configs = $this->configModel->getConfigsByForm($fId, !$isAdmin);
             $drawings = [];
-            if ($pid > 0) {
-                $drawings = $this->dataModel->getDrawingsForEncounter($pid, $encounter, $fId);
+            if ($pid > 0 || $formInstanceId > 0) {
+                $drawings = $this->dataModel->getDrawingsForEncounter($pid, $encounter, $fId, $formInstanceId);
             }
 
             foreach ($configs as $cfg) {
@@ -92,9 +111,21 @@ class GroupCanvasApiController
                 $hasDrawing = isset($drawings[$groupId]);
                 $drawingRow = $hasDrawing ? $drawings[$groupId] : null;
 
+                // Fetch group title and sequencing from layout properties
+                $grpProp = sqlQuery(
+                    "SELECT `grp_title`, `grp_subtitle`, `grp_seq` FROM `layout_group_properties` WHERE `grp_form_id` = ? AND `grp_group_id` = ? LIMIT 1",
+                    [$fId, $groupId]
+                );
+                $groupTitle = !empty($grpProp['grp_title']) ? $grpProp['grp_title'] : '';
+                $groupSubtitle = !empty($grpProp['grp_subtitle']) ? $grpProp['grp_subtitle'] : '';
+                $groupSeq = isset($grpProp['grp_seq']) ? (int)$grpProp['grp_seq'] : null;
+
                 $responseConfigs[] = [
                     'form_id' => $cfg['form_id'],
                     'group_id' => $groupId,
+                    'group_title' => $groupTitle,
+                    'group_subtitle' => $groupSubtitle,
+                    'group_seq' => $groupSeq,
                     'button_label' => $cfg['button_label'] ?: 'Annotate Diagram',
                     'background_image' => $imageFile,
                     'background_image_url' => $imageUrl,
@@ -112,7 +143,8 @@ class GroupCanvasApiController
             'success' => true,
             'configs' => $responseConfigs,
             'pid' => $pid,
-            'encounter' => $encounter
+            'encounter' => $encounter,
+            'form_instance_id' => $formInstanceId
         ];
     }
 
@@ -141,6 +173,23 @@ class GroupCanvasApiController
             $encounter = (int)$session->get('encounter');
         }
 
+        // Resolve pid and encounter from forms table if missing
+        if ($formInstanceId > 0 && ($pid <= 0 || $encounter <= 0) && !empty($formId)) {
+            $altFid = str_starts_with($formId, 'LBF_') ? substr($formId, 4) : 'LBF_' . $formId;
+            $frow = sqlQuery(
+                "SELECT `pid`, `encounter` FROM `forms` WHERE `form_id` = ? AND (`formdir` = ? OR `formdir` = ?) AND `deleted` = 0 LIMIT 1",
+                [$formInstanceId, $formId, $altFid]
+            );
+            if (!empty($frow['pid'])) {
+                if ($pid <= 0) {
+                    $pid = (int)$frow['pid'];
+                }
+                if ($encounter <= 0) {
+                    $encounter = (int)$frow['encounter'];
+                }
+            }
+        }
+
         $drawing = $this->dataModel->getDrawing($pid, $encounter, $formId, $groupId, $formInstanceId);
         $config = $this->configModel->getConfigByFormAndGroup($formId, $groupId);
 
@@ -165,7 +214,8 @@ class GroupCanvasApiController
             'config' => $config,
             'background_image_url' => $imageUrl,
             'pid' => $pid,
-            'encounter' => $encounter
+            'encounter' => $encounter,
+            'form_instance_id' => $formInstanceId
         ];
     }
 

@@ -31,12 +31,29 @@ class GroupCanvasDataModel
         string $groupId,
         int $formInstanceId = 0
     ): ?array {
-        if ($pid <= 0 || empty($formId) || empty($groupId)) {
+        if (empty($formId) || empty($groupId)) {
             return null;
         }
 
-        // 1. If formInstanceId is specified, try exact match first
-        if ($formInstanceId > 0) {
+        // 0. If formInstanceId is specified and pid or encounter is missing, resolve from OpenEMR forms table
+        if ($formInstanceId > 0 && ($pid <= 0 || $encounter <= 0)) {
+            $altFid = str_starts_with($formId, 'LBF_') ? substr($formId, 4) : 'LBF_' . $formId;
+            $frow = sqlQuery(
+                "SELECT `pid`, `encounter` FROM `forms` WHERE `form_id` = ? AND (`formdir` = ? OR `formdir` = ?) AND `deleted` = 0 LIMIT 1",
+                [$formInstanceId, $formId, $altFid]
+            );
+            if (!empty($frow['pid'])) {
+                if ($pid <= 0) {
+                    $pid = (int)$frow['pid'];
+                }
+                if ($encounter <= 0) {
+                    $encounter = (int)$frow['encounter'];
+                }
+            }
+        }
+
+        // 1. If formInstanceId is specified and encounter is known, try exact match first
+        if ($formInstanceId > 0 && $encounter > 0 && $pid > 0) {
             $sql = "SELECT * FROM `module_group_canvas_data` 
                     WHERE `pid` = ? AND `encounter` = ? AND `form_id` = ? AND `group_id` = ? AND `form_instance_id` = ?
                     ORDER BY `updated_at` DESC LIMIT 1";
@@ -46,19 +63,43 @@ class GroupCanvasDataModel
             }
         }
 
-        // 2. Fallback: match by pid, encounter, form_id, group_id (latest updated)
-        $sql = "SELECT * FROM `module_group_canvas_data` 
-                WHERE `pid` = ? AND `encounter` = ? AND `form_id` = ? AND `group_id` = ?
-                ORDER BY `updated_at` DESC LIMIT 1";
-        $row = sqlQuery($sql, [$pid, $encounter, $formId, $groupId]);
-        if (!empty($row)) {
-            return $row;
+        // 2. If formInstanceId is specified, match by instance ID
+        if ($formInstanceId > 0 && $pid > 0) {
+            $sql = "SELECT * FROM `module_group_canvas_data` 
+                    WHERE `pid` = ? AND `form_id` = ? AND `group_id` = ? AND `form_instance_id` = ?
+                    ORDER BY `updated_at` DESC LIMIT 1";
+            $row = sqlQuery($sql, [$pid, $formId, $groupId, $formInstanceId]);
+            if (!empty($row)) {
+                return $row;
+            }
         }
 
-        // 3. Fallback for patient-level forms or cross-instance lookup if encounter is 0
-        if ($encounter > 0) {
+        // 3. Direct match by form_instance_id and group_id
+        if ($formInstanceId > 0) {
             $sql = "SELECT * FROM `module_group_canvas_data` 
-                    WHERE `pid` = ? AND `encounter` = 0 AND `form_id` = ? AND `group_id` = ?
+                    WHERE `form_id` = ? AND `group_id` = ? AND `form_instance_id` = ?
+                    ORDER BY `updated_at` DESC LIMIT 1";
+            $row = sqlQuery($sql, [$formId, $groupId, $formInstanceId]);
+            if (!empty($row)) {
+                return $row;
+            }
+        }
+
+        // 4. Match by pid, encounter, form_id, group_id (latest updated)
+        if ($encounter > 0 && $pid > 0) {
+            $sql = "SELECT * FROM `module_group_canvas_data` 
+                    WHERE `pid` = ? AND `encounter` = ? AND `form_id` = ? AND `group_id` = ?
+                    ORDER BY `updated_at` DESC LIMIT 1";
+            $row = sqlQuery($sql, [$pid, $encounter, $formId, $groupId]);
+            if (!empty($row)) {
+                return $row;
+            }
+        }
+
+        // 5. Fallback for patient-level forms or cross-instance lookup (pid, form_id, group_id)
+        if ($pid > 0) {
+            $sql = "SELECT * FROM `module_group_canvas_data` 
+                    WHERE `pid` = ? AND `form_id` = ? AND `group_id` = ?
                     ORDER BY `updated_at` DESC LIMIT 1";
             $row = sqlQuery($sql, [$pid, $formId, $groupId]);
             if (!empty($row)) {
@@ -75,25 +116,76 @@ class GroupCanvasDataModel
      * @param int $pid
      * @param int $encounter
      * @param string $formId
+     * @param int $formInstanceId
      * @return array Hash map of group_id => row
      */
-    public function getDrawingsForEncounter(int $pid, int $encounter, string $formId): array
+    public function getDrawingsForEncounter(int $pid, int $encounter, string $formId, int $formInstanceId = 0): array
     {
-        if ($pid <= 0 || empty($formId)) {
+        if (empty($formId)) {
             return [];
         }
 
-        $sql = "SELECT * FROM `module_group_canvas_data` 
-                WHERE `pid` = ? AND (`encounter` = ? OR `encounter` = 0) AND `form_id` = ? 
-                ORDER BY `updated_at` DESC";
-        $res = sqlStatement($sql, [$pid, $encounter, $formId]);
-        $drawings = [];
-        while ($row = sqlFetchArray($res)) {
-            $groupId = $row['group_id'];
-            if (!isset($drawings[$groupId])) {
-                $drawings[$groupId] = $row;
+        // Resolve pid and encounter from forms table if missing
+        if ($formInstanceId > 0 && ($pid <= 0 || $encounter <= 0)) {
+            $altFid = str_starts_with($formId, 'LBF_') ? substr($formId, 4) : 'LBF_' . $formId;
+            $frow = sqlQuery(
+                "SELECT `pid`, `encounter` FROM `forms` WHERE `form_id` = ? AND (`formdir` = ? OR `formdir` = ?) AND `deleted` = 0 LIMIT 1",
+                [$formInstanceId, $formId, $altFid]
+            );
+            if (!empty($frow['pid'])) {
+                if ($pid <= 0) {
+                    $pid = (int)$frow['pid'];
+                }
+                if ($encounter <= 0) {
+                    $encounter = (int)$frow['encounter'];
+                }
             }
         }
+
+        if ($pid <= 0 && $formInstanceId <= 0) {
+            return [];
+        }
+
+        $drawings = [];
+
+        // If formInstanceId is specified, look for drawings with that instance first, and fall back to encounter
+        if ($formInstanceId > 0 && $pid > 0) {
+            $sql = "SELECT * FROM `module_group_canvas_data` 
+                    WHERE `pid` = ? AND `form_id` = ? AND (`form_instance_id` = ? OR `encounter` = ? OR `encounter` = 0)
+                    ORDER BY CASE WHEN `form_instance_id` = ? THEN 1 WHEN `encounter` = ? THEN 2 ELSE 3 END, `updated_at` DESC";
+            $res = sqlStatement($sql, [$pid, $formId, $formInstanceId, $encounter, $formInstanceId, $encounter]);
+            while ($row = sqlFetchArray($res)) {
+                $groupId = $row['group_id'];
+                if (!isset($drawings[$groupId])) {
+                    $drawings[$groupId] = $row;
+                }
+            }
+            if (!empty($drawings)) {
+                return $drawings;
+            }
+        }
+
+        if ($pid > 0) {
+            if ($encounter > 0) {
+                $sql = "SELECT * FROM `module_group_canvas_data` 
+                        WHERE `pid` = ? AND (`encounter` = ? OR `encounter` = 0) AND `form_id` = ? 
+                        ORDER BY `updated_at` DESC";
+                $res = sqlStatement($sql, [$pid, $encounter, $formId]);
+            } else {
+                $sql = "SELECT * FROM `module_group_canvas_data` 
+                        WHERE `pid` = ? AND `form_id` = ? 
+                        ORDER BY `updated_at` DESC";
+                $res = sqlStatement($sql, [$pid, $formId]);
+            }
+
+            while ($row = sqlFetchArray($res)) {
+                $groupId = $row['group_id'];
+                if (!isset($drawings[$groupId])) {
+                    $drawings[$groupId] = $row;
+                }
+            }
+        }
+
         return $drawings;
     }
 

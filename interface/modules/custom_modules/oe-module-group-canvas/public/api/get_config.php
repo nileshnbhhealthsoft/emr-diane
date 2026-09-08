@@ -20,8 +20,9 @@ header('Content-Type: application/json');
 
 $session = SessionWrapperFactory::getInstance()->getActiveSession();
 $formId = trim((string)($_GET['form_id'] ?? ''));
-$pid = (int)($_GET['pid'] ?? ($session->get('pid') ?? 0));
-$encounter = (int)($_GET['encounter'] ?? ($session->get('encounter') ?? 0));
+$formInstanceId = (int)($_GET['form_instance_id'] ?? ($_GET['id'] ?? ($_GET['formid'] ?? 0)));
+$pid = !empty($_GET['pid']) ? (int)$_GET['pid'] : (int)($session->get('pid') ?? ($_SESSION['pid'] ?? ($GLOBALS['pid'] ?? 0)));
+$encounter = !empty($_GET['encounter']) ? (int)$_GET['encounter'] : (int)($session->get('encounter') ?? ($_SESSION['encounter'] ?? ($GLOBALS['encounter'] ?? 0)));
 $isAdmin = !empty($_GET['is_admin']);
 
 if (empty($formId)) {
@@ -30,7 +31,7 @@ if (empty($formId)) {
 }
 
 $controller = new GroupCanvasApiController();
-$response = $controller->getFormConfigs($formId, $pid, $encounter, $isAdmin);
+$response = $controller->getFormConfigs($formId, $pid, $encounter, $isAdmin, $formInstanceId);
 
 echo json_encode($response);
 exit;
