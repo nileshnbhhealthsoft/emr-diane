@@ -185,4 +185,156 @@ class GroupCanvasConfigModel
 
         return $forms;
     }
+
+    /**
+     * Ensure the module_group_canvas_hidden_fields table exists
+     */
+    public function ensureHiddenFieldsTable(): void
+    {
+        $sql = "CREATE TABLE IF NOT EXISTS `module_group_canvas_hidden_fields` (
+            `id` INT NOT NULL PRIMARY KEY AUTO_INCREMENT,
+            `form_id` VARCHAR(31) NOT NULL,
+            `field_id` VARCHAR(31) NOT NULL,
+            `is_hidden` TINYINT(1) NOT NULL DEFAULT 1,
+            `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+            `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            UNIQUE KEY `form_field_unique` (`form_id`, `field_id`)
+        ) ENGINE=InnoDB COMMENT='Fields hidden from Encounter Summary'";
+
+        try {
+            sqlStatement($sql);
+        } catch (\Throwable $e) {
+            // Table may already exist or DB error
+        }
+    }
+
+    /**
+     * Get all hidden field IDs for a specific form_id
+     *
+     * @param string $formId
+     * @return array List of field_ids that are hidden
+     */
+    public function getHiddenFieldsByForm(string $formId): array
+    {
+        $this->ensureHiddenFieldsTable();
+        $sql = "SELECT `field_id` FROM `module_group_canvas_hidden_fields` WHERE `form_id` = ? AND `is_hidden` = 1";
+        $res = sqlStatement($sql, [$formId]);
+        $fields = [];
+        while ($row = sqlFetchArray($res)) {
+            $fields[] = $row['field_id'];
+        }
+        return $fields;
+    }
+
+    /**
+     * Check if a specific field is hidden from Encounter Summary
+     *
+     * @param string $formId
+     * @param string $fieldId
+     * @return bool
+     */
+    public function isFieldHidden(string $formId, string $fieldId): bool
+    {
+        $this->ensureHiddenFieldsTable();
+        $sql = "SELECT `is_hidden` FROM `module_group_canvas_hidden_fields` WHERE `form_id` = ? AND `field_id` = ? LIMIT 1";
+        $row = sqlQuery($sql, [$formId, $fieldId]);
+        return !empty($row['is_hidden']) && (int)$row['is_hidden'] === 1;
+    }
+
+    /**
+     * Save or update hidden status for a field in a form
+     *
+     * @param string $formId
+     * @param string $fieldId
+     * @param bool $isHidden
+     * @return bool
+     */
+    public function setFieldHidden(string $formId, string $fieldId, bool $isHidden): bool
+    {
+        $this->ensureHiddenFieldsTable();
+        if ($isHidden) {
+            $sql = "INSERT INTO `module_group_canvas_hidden_fields` (`form_id`, `field_id`, `is_hidden`)
+                    VALUES (?, ?, 1)
+                    ON DUPLICATE KEY UPDATE `is_hidden` = 1";
+            return (bool)sqlStatement($sql, [$formId, $fieldId]);
+        } else {
+            $sql = "DELETE FROM `module_group_canvas_hidden_fields` WHERE `form_id` = ? AND `field_id` = ?";
+            return (bool)sqlStatement($sql, [$formId, $fieldId]);
+        }
+    }
+
+    /**
+     * Get all hidden fields across all forms as an associative map: form_id => [field_id => true]
+     *
+     * @return array
+     */
+    public function getAllHiddenFields(): array
+    {
+        $this->ensureHiddenFieldsTable();
+        $sql = "SELECT `form_id`, `field_id` FROM `module_group_canvas_hidden_fields` WHERE `is_hidden` = 1";
+        $res = sqlStatement($sql);
+        $map = [];
+        while ($row = sqlFetchArray($res)) {
+            $fId = $row['form_id'];
+            $fld = $row['field_id'];
+            if (!isset($map[$fId])) {
+                $map[$fId] = [];
+            }
+            $map[$fId][] = $fld;
+        }
+        return $map;
+    }
+
+    /**
+     * Get hidden fields with field title and details for a form
+     *
+     * @param string $formId
+     * @return array List of ['field_id' => ..., 'title' => ...]
+     */
+    public function getHiddenFieldsWithDetails(string $formId): array
+    {
+        $this->ensureHiddenFieldsTable();
+        $sql = "SELECT h.field_id, l.title 
+                FROM `module_group_canvas_hidden_fields` h 
+                LEFT JOIN `layout_options` l ON l.form_id = h.form_id AND l.field_id = h.field_id 
+                WHERE h.form_id = ? AND h.is_hidden = 1";
+        $res = sqlStatement($sql, [$formId]);
+        $fields = [];
+        while ($row = sqlFetchArray($res)) {
+            $fields[] = [
+                'field_id' => $row['field_id'],
+                'title' => $row['title'] ?? ''
+            ];
+        }
+        return $fields;
+    }
+
+    /**
+     * Get all hidden fields with title details across all forms: form_id => [ ['field_id' => ..., 'title' => ...], ... ]
+     *
+     * @return array
+     */
+    public function getAllHiddenFieldsWithTitles(): array
+    {
+        $this->ensureHiddenFieldsTable();
+        $sql = "SELECT h.form_id, h.field_id, l.title 
+                FROM `module_group_canvas_hidden_fields` h 
+                LEFT JOIN `layout_options` l ON l.form_id = h.form_id AND l.field_id = h.field_id 
+                WHERE h.is_hidden = 1";
+        $res = sqlStatement($sql);
+        $map = [];
+        while ($row = sqlFetchArray($res)) {
+            $fId = $row['form_id'];
+            if (!isset($map[$fId])) {
+                $map[$fId] = [];
+            }
+            $map[$fId][] = [
+                'field_id' => $row['field_id'],
+                'title' => $row['title'] ?? ''
+            ];
+        }
+        return $map;
+    }
 }
+
+

@@ -108,7 +108,7 @@ $siteImagesUrl = $webroot . '/sites/' . $session->get('site_id') . '/images/';
                     <small class="text-muted"><?php echo xlt("Configure interactive background diagrams and canvas drawing for each layout group header."); ?></small>
                 </div>
                 <div>
-                    <button class="btn btn-outline-secondary btn-sm" onclick="location.reload();">
+                    <button class="btn btn-secondary btn-sm" onclick="location.reload();">
                         <i class="fa fa-sync-alt mr-1"></i><?php echo xlt("Refresh"); ?>
                     </button>
                 </div>
@@ -247,7 +247,7 @@ $siteImagesUrl = $webroot . '/sites/' . $session->get('site_id') . '/images/';
                                                 <?php } ?>
                                             </div>
                                             <div class="mt-2 text-center" id="remove_wrapper_<?php echo attr($group['group_id']); ?>" style="<?php echo empty($imgSrc) ? 'display:none;' : ''; ?>">
-                                                <button type="button" class="btn btn-outline-danger btn-sm remove-image-btn" data-group="<?php echo attr($group['group_id']); ?>" data-form="<?php echo attr($selectedFormId); ?>">
+                                                <button type="button" class="btn btn-danger btn-sm remove-image-btn" data-group="<?php echo attr($group['group_id']); ?>" data-form="<?php echo attr($selectedFormId); ?>">
                                                     <i class="fa fa-trash-alt mr-1"></i><?php echo xlt("Remove Image"); ?>
                                                 </button>
                                             </div>

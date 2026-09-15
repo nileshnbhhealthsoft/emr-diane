@@ -16,6 +16,7 @@ use OpenEMR\Core\OEGlobalsBag;
 use OpenEMR\Menu\MenuEvent;
 use OpenEMR\Events\Core\ScriptFilterEvent;
 use OpenEMR\Events\Core\StyleFilterEvent;
+use OpenEMR\Events\Encounter\EncounterFormsListRenderEvent;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 
 /**
@@ -59,10 +60,13 @@ function oe_module_group_canvas_add_scripts(ScriptFilterEvent $event): void
     ];
 
     if (in_array($pageName, $targetPages)) {
+        $authJs = __DIR__ . '/public/api/auth_context.js.php';
         $drawerJs = __DIR__ . '/public/assets/js/group-canvas-drawer.js';
         $injectorJs = __DIR__ . '/public/assets/js/group-canvas-injector.js';
+        $vAuth = file_exists($authJs) ? filemtime($authJs) : time();
         $vDrawer = file_exists($drawerJs) ? filemtime($drawerJs) : time();
         $vInjector = file_exists($injectorJs) ? filemtime($injectorJs) : time();
+        $scripts[] = $webroot . "/interface/modules/custom_modules/oe-module-group-canvas/public/api/auth_context.js.php?v=" . $vAuth;
         $scripts[] = $webroot . "/interface/modules/custom_modules/oe-module-group-canvas/public/assets/js/group-canvas-drawer.js?v=" . $vDrawer;
         $scripts[] = $webroot . "/interface/modules/custom_modules/oe-module-group-canvas/public/assets/js/group-canvas-injector.js?v=" . $vInjector;
         $event->setScripts($scripts);
@@ -103,6 +107,23 @@ function oe_module_group_canvas_add_styles(StyleFilterEvent $event): void
 }
 
 /**
+ * Pre-render event listener for Encounter Summary (forms.php)
+ * Injects hidden fields data for client-side exclusion
+ */
+function oe_module_group_canvas_encounter_forms_render_pre(EncounterFormsListRenderEvent $event): void
+{
+    try {
+        $configModel = new \OpenEMR\Modules\GroupCanvas\Model\GroupCanvasConfigModel();
+        $allHidden = $configModel->getAllHiddenFieldsWithTitles();
+        if (!empty($allHidden)) {
+            echo "<script>window.oeGroupCanvasHiddenFieldsMap = " . json_encode($allHidden) . ";</script>\n";
+        }
+    } catch (\Throwable $e) {
+        // Fail-safe
+    }
+}
+
+/**
  * @var EventDispatcherInterface $eventDispatcher
  * @var array                    $module
  * @global                       $eventDispatcher @see ModulesApplication::loadCustomModule
@@ -110,4 +131,5 @@ function oe_module_group_canvas_add_styles(StyleFilterEvent $event): void
  */
 $eventDispatcher->addListener(ScriptFilterEvent::EVENT_NAME, 'oe_module_group_canvas_add_scripts');
 $eventDispatcher->addListener(StyleFilterEvent::EVENT_NAME, 'oe_module_group_canvas_add_styles');
+$eventDispatcher->addListener(EncounterFormsListRenderEvent::EVENT_SECTION_RENDER_PRE, 'oe_module_group_canvas_encounter_forms_render_pre');
 

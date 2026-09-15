@@ -29,6 +29,11 @@
                 self.detectContext();
                 self.ensureModalDOM();
 
+                // Immediately set default provider if auth context is present
+                if (window.oeModuleAuthUser) {
+                    self.setDefaultProvider(window.oeModuleAuthUser);
+                }
+
                 if (self.isVisitSummary) {
                     self.initVisitSummary();
                 } else if (self.formId) {
@@ -38,6 +43,8 @@
                     if ($('.form-holder, #partable').length) {
                         self.isVisitSummary = true;
                         self.initVisitSummary();
+                    } else if ($('select[name="form_provider_id"], select[name="form_fs_provid"], select[name^="form_"][name*="provider"]').length) {
+                        self.loadSingleFormConfigs('LBF');
                     }
                 }
             });
@@ -158,21 +165,81 @@
                 },
                 dataType: 'json',
                 success: function (res) {
-                    if (res && res.success && Array.isArray(res.configs)) {
+                    if (res && res.success) {
                         if (res.pid && (!self.pid || self.pid <= 0)) {
                             self.pid = parseInt(res.pid, 10) || self.pid;
                         }
                         if (res.encounter && (!self.encounter || self.encounter <= 0)) {
                             self.encounter = parseInt(res.encounter, 10) || self.encounter;
                         }
-                        self.formConfigs[formId] = res.configs;
-                        self.injectSingleFormComponents(formId, res.configs);
-                        self.bindFormSubmitSync(formId);
+                        self.setDefaultProvider(res);
+                        if (Array.isArray(res.configs)) {
+                            self.formConfigs[formId] = res.configs;
+                            self.injectSingleFormComponents(formId, res.configs);
+                            self.bindFormSubmitSync(formId);
+                        }
                     }
                 },
                 error: function (err) {
                     console.warn('Group Canvas: Failed to load form configurations', err);
                 }
+            });
+        },
+
+        setDefaultProvider: function (res) {
+            if (res) {
+                this.userAuthInfo = res;
+            } else {
+                res = this.userAuthInfo || window.oeModuleAuthUser || {};
+            }
+
+            // Only set default provider for new forms (when no formInstanceId exists or provider is unselected)
+            if (this.formInstanceId && this.formInstanceId > 0) {
+                return;
+            }
+
+            var authUserId = (res && res.auth_user_id) ? String(res.auth_user_id) : '';
+            var authUserName = (res && res.auth_user_name) ? String(res.auth_user_name) : '';
+            var authUserFullname = (res && res.auth_user_fullname) ? String(res.auth_user_fullname).toLowerCase() : '';
+            var authProvider = (res && res.auth_provider) ? String(res.auth_provider).toLowerCase() : '';
+
+            var applyToSelect = function (sel) {
+                var currentVal = sel.val();
+                if (!currentVal || currentVal === '0' || currentVal === '') {
+                    if (authUserId && sel.find('option[value="' + authUserId + '"]').length) {
+                        sel.val(authUserId).trigger('change');
+                    } else if (authUserFullname || authProvider || authUserName) {
+                        sel.find('option').each(function () {
+                            var opt = $(this);
+                            var optVal = opt.val();
+                            if (!optVal || optVal === '0') return;
+                            var optText = opt.text().toLowerCase();
+                            if ((authUserFullname && optText.indexOf(authUserFullname) !== -1) ||
+                                (authProvider && optText.indexOf(authProvider) !== -1) ||
+                                (authUserName && optText.indexOf(authUserName.toLowerCase()) !== -1)) {
+                                sel.val(optVal).trigger('change');
+                                return false;
+                            }
+                        });
+                    }
+                }
+            };
+
+            // 1. Top-level Provider selector on clinical form: select[name="form_provider_id"]
+            var formProvSelect = $('select[name="form_provider_id"]');
+            if (formProvSelect.length) {
+                applyToSelect(formProvSelect);
+            }
+
+            // 2. Fee Sheet Main Provider: select[name="form_fs_provid"]
+            var fsProvSelect = $('select[name="form_fs_provid"]');
+            if (fsProvSelect.length) {
+                applyToSelect(fsProvSelect);
+            }
+
+            // 3. Any in-form Provider layout fields (data_type 10/11 or named provider)
+            $('select[name^="form_"][name*="provider"], select[name^="form_"][name*="user"]').each(function () {
+                applyToSelect($(this));
             });
         },
 
@@ -197,7 +264,7 @@
                 if (targetHeader && targetHeader.length) {
                     if (!targetHeader.find('.oe-group-canvas-wrapper[data-group="' + groupId + '"]').length &&
                         !targetHeader.parent().find('.oe-group-canvas-wrapper[data-group="' + groupId + '"]').length) {
-                        var btnClass = 'oe-group-canvas-btn' + (hasDrawing ? ' has-saved-data' : '');
+                        var btnClass = 'btn btn-sm ' + (hasDrawing ? 'btn-success has-saved-data' : 'btn-primary') + ' oe-group-canvas-btn';
                         var icon = hasDrawing ? 'fa-check-circle' : 'fa-paint-brush';
                         var badgeHtml = hasDrawing ? '<span class="oe-group-canvas-badge">Saved</span>' : '';
 
@@ -352,8 +419,30 @@
 
             if (!detectedForms.length) return;
 
+            // Immediate hide using pre-rendered event data if available
+            if (window.oeGroupCanvasHiddenFieldsMap) {
+                detectedForms.forEach(function (item) {
+                    if (window.oeGroupCanvasHiddenFieldsMap[item.formdir]) {
+                        self.hideVisitSummaryFields(item.formdir, item.holder, window.oeGroupCanvasHiddenFieldsMap[item.formdir]);
+                    }
+                });
+            }
+
             detectedForms.forEach(function (item) {
                 self.loadVisitSummaryForm(item);
+            });
+
+            // Re-apply when accordions are expanded
+            $(document).on('show.bs.collapse shown.bs.collapse', '.collapse', function () {
+                var collapseElem = $(this);
+                var holder = collapseElem.closest('.form-holder');
+                if (holder.length && window.oeGroupCanvasHiddenFieldsMap) {
+                    var holderId = holder.attr('id') || '';
+                    var formdir = holderId.split('~')[0] || '';
+                    if (formdir && window.oeGroupCanvasHiddenFieldsMap[formdir]) {
+                        self.hideVisitSummaryFields(formdir, holder, window.oeGroupCanvasHiddenFieldsMap[formdir]);
+                    }
+                }
             });
         },
 
@@ -374,14 +463,72 @@
                 },
                 dataType: 'json',
                 success: function (res) {
-                    if (res && res.success && Array.isArray(res.configs) && res.configs.length > 0) {
-                        self.formConfigs[formdir] = res.configs;
-                        self.injectVisitSummaryComponents(formdir, instanceId, holder, res.configs);
+                    if (res && res.success) {
+                        // Hide any fields configured as hidden
+                        var hiddenList = res.hidden_fields_details || res.hidden_fields || [];
+                        if (Array.isArray(hiddenList) && hiddenList.length > 0) {
+                            self.hideVisitSummaryFields(formdir, holder, hiddenList);
+                        }
+
+                        if (Array.isArray(res.configs) && res.configs.length > 0) {
+                            self.formConfigs[formdir] = res.configs;
+                            self.injectVisitSummaryComponents(formdir, instanceId, holder, res.configs);
+                        }
                     }
                 },
                 error: function (err) {
                     console.warn('Group Canvas: Failed to load configs for visit summary form ' + formdir, err);
                 }
+            });
+        },
+
+        hideVisitSummaryFields: function (formdir, holder, hiddenFields) {
+            if (!holder || !holder.length || !Array.isArray(hiddenFields) || !hiddenFields.length) return;
+
+            hiddenFields.forEach(function (item) {
+                var fieldId = typeof item === 'object' ? (item.field_id || '') : String(item);
+                var fieldTitle = typeof item === 'object' ? (item.title || '') : '';
+
+                var targetPatterns = [];
+                if (fieldTitle) {
+                    targetPatterns.push(fieldTitle.trim().toLowerCase());
+                }
+                if (fieldId) {
+                    targetPatterns.push(fieldId.trim().toLowerCase());
+                    targetPatterns.push(fieldId.replace(/_/g, ' ').trim().toLowerCase());
+                }
+
+                holder.find('td.label_custom, td.label, th.label_custom').each(function () {
+                    var labelElem = $(this);
+                    var rawText = labelElem.text().replace(/[:\s]+$/, '').trim().toLowerCase();
+
+                    var isMatch = targetPatterns.some(function (p) {
+                        return p && (rawText === p || rawText.indexOf(p) === 0);
+                    });
+
+                    if (isMatch) {
+                        labelElem.addClass('d-none').hide();
+
+                        var nextTd = labelElem.next('td.data, td.text, td');
+                        if (nextTd.length) {
+                            nextTd.addClass('d-none').hide();
+                        }
+
+                        var tr = labelElem.closest('tr');
+                        var visibleCells = tr.find('> td:visible, > th:visible');
+                        var hasContent = false;
+                        visibleCells.each(function () {
+                            var cell = $(this);
+                            if (!cell.hasClass('align-top') && !cell.hasClass('groupname') && cell.text().trim() !== '') {
+                                hasContent = true;
+                            }
+                        });
+
+                        if (!hasContent) {
+                            tr.addClass('d-none').hide();
+                        }
+                    }
+                });
             });
         },
 
@@ -404,7 +551,7 @@
                 if (targetHeader && targetHeader.length) {
                     var btnKey = 'oe_summary_btn_' + formdir + '_' + groupId;
                     if (!targetHeader.find('#' + btnKey).length && !targetHeader.find('.oe-summary-canvas-wrapper[data-group="' + groupId + '"]').length) {
-                        var btnClass = 'oe-group-canvas-btn oe-summary-group-canvas-btn' + (hasDrawing ? ' has-saved-data' : '');
+                        var btnClass = 'btn btn-sm ' + (hasDrawing ? 'btn-success has-saved-data' : 'btn-primary') + ' oe-group-canvas-btn oe-summary-group-canvas-btn';
                         var icon = hasDrawing ? 'fa-check-circle' : 'fa-image';
                         var badgeHtml = hasDrawing ? '<span class="oe-group-canvas-badge">Saved</span>' : '';
 
@@ -652,9 +799,9 @@
                 '      </div>' +
                 '      <!-- History Stack & Save Controls -->' +
                 '      <div class="oe-canvas-tool-group ml-auto">' +
-                '        <button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" id="oe_canvas_undo_btn" title="Undo (Ctrl+Z)"><i class="fa fa-undo"></i> Undo</button>' +
-                '        <button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" id="oe_canvas_redo_btn" title="Redo (Ctrl+Y)"><i class="fa fa-redo"></i> Redo</button>' +
-                '        <button type="button" class="btn btn-sm btn-outline-danger py-1 px-2 mr-2" id="oe_canvas_clear_btn" title="Clear Canvas Annotations"><i class="fa fa-trash"></i> Clear</button>' +
+                '        <button type="button" class="btn btn-sm btn-secondary py-1 px-2" id="oe_canvas_undo_btn" title="Undo (Ctrl+Z)"><i class="fa fa-undo"></i> Undo</button>' +
+                '        <button type="button" class="btn btn-sm btn-secondary py-1 px-2" id="oe_canvas_redo_btn" title="Redo (Ctrl+Y)"><i class="fa fa-redo"></i> Redo</button>' +
+                '        <button type="button" class="btn btn-sm btn-danger py-1 px-2 mr-2" id="oe_canvas_clear_btn" title="Clear Canvas Annotations"><i class="fa fa-trash"></i> Clear</button>' +
                 '        <button type="button" class="btn btn-sm btn-success font-weight-bold py-1 px-3 oe-canvas-toolbar-save-btn" id="oe_canvas_toolbar_save_btn" title="Save (Ctrl+S)">' +
                 '          <i class="fa fa-save mr-1"></i> Save' +
                 '        </button>' +
@@ -930,8 +1077,8 @@
 
                         // 1. Update single-form and visit summary header button states
                         var allBtns = $('button.oe-group-canvas-btn[data-form="' + ctx.form_id + '"][data-group="' + ctx.group_id + '"], button.oe-group-canvas-btn[data-group="' + ctx.group_id + '"], #oe_summary_btn_' + ctx.form_id + '_' + ctx.group_id);
-                        allBtns.addClass('has-saved-data');
-                        allBtns.find('i').removeClass('fa-paint-brush fa-palette').addClass('fa-check-circle');
+                        allBtns.removeClass('btn-primary').addClass('btn-success has-saved-data');
+                        allBtns.find('i').removeClass('fa-paint-brush fa-palette fa-image').addClass('fa-check-circle');
                         allBtns.each(function () {
                             if (!$(this).find('.oe-group-canvas-badge').length) {
                                 $(this).append('<span class="oe-group-canvas-badge">Saved</span>');

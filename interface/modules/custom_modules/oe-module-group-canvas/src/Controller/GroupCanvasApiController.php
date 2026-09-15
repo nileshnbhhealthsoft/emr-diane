@@ -139,9 +139,31 @@ class GroupCanvasApiController
             }
         }
 
+        $hiddenFields = [];
+        $hiddenFieldsDetails = [];
+        foreach ($formIds as $fId) {
+            $hiddenFields[$fId] = $this->configModel->getHiddenFieldsByForm($fId);
+            $hiddenFieldsDetails[$fId] = $this->configModel->getHiddenFieldsWithDetails($fId);
+        }
+        $primaryHiddenFields = count($formIds) === 1 ? ($hiddenFields[reset($formIds)] ?? []) : $hiddenFields;
+        $primaryHiddenDetails = count($formIds) === 1 ? ($hiddenFieldsDetails[reset($formIds)] ?? []) : $hiddenFieldsDetails;
+
+        $authUserId = (int)($session->get('authUserID') ?? ($_SESSION['authUserID'] ?? ($GLOBALS['authUserID'] ?? 0)));
+        $authUserName = (string)($session->get('authUser') ?? ($_SESSION['authUser'] ?? ($GLOBALS['authUser'] ?? '')));
+        $authProviderName = (string)($session->get('authProvider') ?? ($_SESSION['authProvider'] ?? ($GLOBALS['authProvider'] ?? '')));
+        $userRow = $authUserId > 0 ? sqlQuery("SELECT fname, lname FROM users WHERE id = ? LIMIT 1", [$authUserId]) : null;
+        $userFullName = $userRow ? trim(($userRow['fname'] ?? '') . ' ' . ($userRow['lname'] ?? '')) : '';
+
         return [
             'success' => true,
             'configs' => $responseConfigs,
+            'hidden_fields' => $primaryHiddenFields,
+            'hidden_fields_details' => $primaryHiddenDetails,
+            'hidden_fields_by_form' => $hiddenFields,
+            'auth_user_id' => $authUserId,
+            'auth_user_name' => $authUserName,
+            'auth_user_fullname' => $userFullName,
+            'auth_provider' => $authProviderName,
             'pid' => $pid,
             'encounter' => $encounter,
             'form_instance_id' => $formInstanceId
@@ -279,4 +301,45 @@ class GroupCanvasApiController
 
         return ['success' => false, 'message' => xl('Failed to save drawing')];
     }
+
+    /**
+     * Get hidden fields for a form
+     *
+     * @param string $formId
+     * @return array
+     */
+    public function getHiddenFields(string $formId): array
+    {
+        $fields = $this->configModel->getHiddenFieldsByForm($formId);
+        return [
+            'success' => true,
+            'form_id' => $formId,
+            'hidden_fields' => $fields
+        ];
+    }
+
+    /**
+     * Save or update hidden status for a field in a form
+     *
+     * @param string $formId
+     * @param string $fieldId
+     * @param bool $isHidden
+     * @return array
+     */
+    public function saveHiddenField(string $formId, string $fieldId, bool $isHidden): array
+    {
+        $saved = $this->configModel->setFieldHidden($formId, $fieldId, $isHidden);
+        if ($saved) {
+            return [
+                'success' => true,
+                'form_id' => $formId,
+                'field_id' => $fieldId,
+                'is_hidden' => $isHidden,
+                'message' => $isHidden ? xl('Field hidden from encounter summary') : xl('Field visible in encounter summary')
+            ];
+        }
+
+        return ['success' => false, 'message' => xl('Failed to update hidden field state')];
+    }
 }
+

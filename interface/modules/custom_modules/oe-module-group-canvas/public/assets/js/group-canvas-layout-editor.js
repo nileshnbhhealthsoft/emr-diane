@@ -1,8 +1,8 @@
 /**
  * group-canvas-layout-editor.js
  *
- * Injects Group Canvas configuration buttons into OpenEMR Layout Editor (edit_layout.php)
- * for clinical forms (LBF layouts) in the group header toolbar area.
+ * Injects Group Canvas configuration buttons and "Encounter Summary Hide" checkboxes
+ * into OpenEMR Layout Editor (edit_layout.php) for clinical forms (LBF layouts).
  *
  * @package OpenEMR
  * @author  Nilesh Hake <nilesh.hake@nbhhealthsoft.com>
@@ -16,6 +16,7 @@
         csrfToken: '',
         moduleBaseUrl: '',
         configs: {},
+        hiddenFields: {},
         activeGroupId: '',
         activeGroupTitle: '',
 
@@ -26,7 +27,9 @@
                 if (self.isClinicalForm()) {
                     self.loadConfigs(function () {
                         self.injectToolbarButtons();
+                        self.injectEncounterSummaryHideColumns();
                         self.ensureModalDOM();
+                        self.bindHiddenFieldEvents();
                     });
                 }
             });
@@ -50,7 +53,7 @@
         },
 
         isClinicalForm: function () {
-            // Group canvas configuration is available on clinical forms (LBF layouts)
+            // Group canvas configuration and encounter summary hide are available on clinical forms (LBF layouts)
             return this.formId && this.formId.indexOf('LBF') === 0;
         },
 
@@ -68,11 +71,22 @@
                 dataType: 'json',
                 success: function (res) {
                     self.configs = {};
-                    if (res && res.success && Array.isArray(res.configs)) {
-                        res.configs.forEach(function (cfg) {
-                            self.configs[cfg.group_id] = cfg;
-                        });
+                    self.hiddenFields = {};
+
+                    if (res && res.success) {
+                        if (Array.isArray(res.configs)) {
+                            res.configs.forEach(function (cfg) {
+                                self.configs[cfg.group_id] = cfg;
+                            });
+                        }
+
+                        if (Array.isArray(res.hidden_fields)) {
+                            res.hidden_fields.forEach(function (fld) {
+                                self.hiddenFields[String(fld).trim()] = true;
+                            });
+                        }
                     }
+
                     if (typeof callback === 'function') {
                         callback();
                     }
@@ -121,8 +135,8 @@
                 var cfg = self.configs[groupId];
                 var hasImage = !!(cfg && cfg.has_image && cfg.background_image);
 
-                var btnClass = hasImage ? 'btn btn-info btn-sm oe-btn-layout-canvas' : 'btn btn-outline-secondary btn-sm oe-btn-layout-canvas';
-                var badgeHtml = hasImage ? '<span class="badge badge-success ml-1 oe-image-status-badge"><i class="fa fa-check"></i> Image Set</span>' : '';
+                var btnClass = hasImage ? 'btn btn-primary btn-sm oe-btn-layout-canvas' : 'btn btn-secondary btn-sm oe-btn-layout-canvas';
+                var badgeHtml = hasImage ? '<span class="badge badge-light ml-1 oe-image-status-badge text-primary font-weight-bold"><i class="fa fa-check"></i> Image Set</span>' : '';
 
                 var buttonGroupHtml = $(
                     '<div class="btn-group ml-2 oe-layout-canvas-group" role="group" aria-label="Canvas Image">' +
@@ -147,6 +161,167 @@
                     toolbar.append(buttonGroupHtml);
                 }
             });
+        },
+
+        /* ==========================================================================
+           Encounter Summary Hide - Column & Checkbox Injection (Clinical Forms Only)
+           ========================================================================== */
+        injectEncounterSummaryHideColumns: function () {
+            var self = this;
+            if (!this.isClinicalForm()) return;
+
+            // 1. Inject Header into each table: directly after "Backup List" <th>
+            $('th').each(function () {
+                var th = $(this);
+                var text = th.text().trim();
+                if (/backup\s*list/i.test(text)) {
+                    if (!th.next('.oe-enc-summary-hide-th').length) {
+                        var newTh = $(
+                            '<th class="oe-enc-summary-hide-th" title="Check this box to hide this field in the Encounter Summary / Visit Summary">' +
+                            '  <i class="fa fa-eye-slash mr-1 text-danger"></i> Encounter Summary Hide' +
+                            '</th>'
+                        );
+                        th.after(newTh);
+                    }
+                }
+            });
+
+            // 2. Inject Checkbox <td> into each field row: directly after "Backup List" <td>
+            $('td').has('input[name*="[list_backup_id]"]').each(function () {
+                var backupTd = $(this);
+                if (backupTd.next('.oe-enc-summary-hide-td').length) return;
+
+                var tr = backupTd.closest('tr');
+                var idInput = tr.find('input[name$="[id]"], input[name$="[originalid]"]').first();
+                var fieldId = idInput.length ? String(idInput.val()).trim() : '';
+
+                if (!fieldId) return;
+
+                var isHidden = !!(self.hiddenFields && self.hiddenFields[fieldId]);
+                var checkedAttr = isHidden ? ' checked="checked"' : '';
+
+                var hideTd = $(
+                    '<td class="text-center optcell oe-enc-summary-hide-td">' +
+                    '  <div class="oe-enc-hide-wrapper" title="Check to hide \'' + self.escapeHtml(fieldId) + '\' from Encounter Summary">' +
+                    '    <input type="checkbox" class="oe-enc-summary-hide-cb" id="oe_enc_hide_' + self.escapeHtml(fieldId) + '" data-form-id="' + self.escapeHtml(self.formId) + '" data-field-id="' + self.escapeHtml(fieldId) + '"' + checkedAttr + ' />' +
+                    '  </div>' +
+                    '</td>'
+                );
+
+                backupTd.after(hideTd);
+            });
+
+            // 3. Inject into "#fielddetail" (Add New Field modal table)
+            var newBackupTd = $('#fielddetail td').has('#newbackuplistid');
+            if (newBackupTd.length && !newBackupTd.next('.oe-enc-summary-hide-td').length) {
+                var newHideTd = $(
+                    '<td class="text-center optcell oe-enc-summary-hide-td">' +
+                    '  <div class="oe-enc-hide-wrapper" title="Check to hide newly created field in Encounter Summary">' +
+                    '    <input type="checkbox" id="new_enc_summary_hide" name="new_enc_summary_hide" class="oe-enc-summary-hide-cb" />' +
+                    '  </div>' +
+                    '</td>'
+                );
+                newBackupTd.after(newHideTd);
+            }
+        },
+
+        bindHiddenFieldEvents: function () {
+            var self = this;
+
+            // Handle Checkbox Toggle
+            $(document).off('change.oeEncHide').on('change.oeEncHide', '.oe-enc-summary-hide-cb:not(#new_enc_summary_hide)', function (e) {
+                var cb = $(this);
+                var formId = cb.data('form-id') || self.formId;
+                var fieldId = cb.data('field-id');
+                var isHidden = cb.is(':checked') ? 1 : 0;
+
+                if (!formId || !fieldId) return;
+
+                var wrapper = cb.closest('.oe-enc-hide-wrapper');
+                wrapper.addClass('oe-saving-pulse');
+
+                var apiUrl = self.moduleBaseUrl + '/public/api/save_hidden_field.php';
+
+                $.ajax({
+                    url: apiUrl,
+                    type: 'POST',
+                    data: {
+                        form_id: formId,
+                        field_id: fieldId,
+                        is_hidden: isHidden,
+                        csrf_token_form: self.csrfToken
+                    },
+                    dataType: 'json',
+                    success: function (res) {
+                        wrapper.removeClass('oe-saving-pulse');
+                        if (res && res.success) {
+                            if (isHidden) {
+                                self.hiddenFields[fieldId] = true;
+                                self.showToast('"' + fieldId + '" is now HIDDEN in Encounter Summary', 'success');
+                            } else {
+                                delete self.hiddenFields[fieldId];
+                                self.showToast('"' + fieldId + '" is now VISIBLE in Encounter Summary', 'info');
+                            }
+                        } else {
+                            cb.prop('checked', !isHidden); // revert on failure
+                            self.showToast(res.message || 'Error updating Encounter Summary visibility', 'danger');
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        wrapper.removeClass('oe-saving-pulse');
+                        cb.prop('checked', !isHidden); // revert
+                        self.showToast('Server communication error: ' + error, 'danger');
+                    }
+                });
+            });
+
+            // Handle Add New Field - persist hidden field setting if checked
+            $(document).off('click.oeEncHideNew').on('click.oeEncHideNew', '.savenewfield', function () {
+                var isHidden = $('#new_enc_summary_hide').is(':checked');
+                var newId = ($('#newid').val() || '').trim();
+                if (isHidden && newId) {
+                    $.ajax({
+                        url: self.moduleBaseUrl + '/public/api/save_hidden_field.php',
+                        type: 'POST',
+                        data: {
+                            form_id: self.formId,
+                            field_id: newId,
+                            is_hidden: 1,
+                            csrf_token_form: self.csrfToken
+                        },
+                        dataType: 'json'
+                    });
+                }
+            });
+        },
+
+        showToast: function (message, type) {
+            var container = $('#oe_layout_notification_container');
+            if (!container.length) {
+                container = $('<div id="oe_layout_notification_container" class="oe-layout-notification-container"></div>');
+                $('body').append(container);
+            }
+
+            var iconClass = type === 'success' ? 'fa-check-circle' : (type === 'danger' ? 'fa-exclamation-circle' : 'fa-info-circle');
+            var toast = $(
+                '<div class="oe-layout-toast oe-toast-' + type + '">' +
+                '  <i class="fa ' + iconClass + ' mr-2"></i>' +
+                '  <span>' + this.escapeHtml(message) + '</span>' +
+                '</div>'
+            );
+
+            container.append(toast);
+
+            setTimeout(function () {
+                toast.addClass('show');
+            }, 20);
+
+            setTimeout(function () {
+                toast.removeClass('show');
+                setTimeout(function () {
+                    toast.remove();
+                }, 300);
+            }, 3200);
         },
 
         ensureModalDOM: function () {
@@ -192,7 +367,7 @@
                 '                <span class="badge badge-success mr-2"><i class="fa fa-check"></i> Image Active</span>' +
                 '                <span id="oe_current_image_name" class="small text-muted font-italic"></span>' +
                 '              </div>' +
-                '              <button type="button" class="btn btn-sm btn-outline-danger" id="oe_remove_image_btn">' +
+                '              <button type="button" class="btn btn-sm btn-danger" id="oe_remove_image_btn">' +
                 '                <i class="fa fa-trash-alt mr-1"></i> Remove Image' +
                 '              </button>' +
                 '            </div>' +
@@ -484,12 +659,12 @@
             var btn = $('button.oe-btn-layout-canvas[data-group-id="' + groupId + '"]');
             if (btn.length) {
                 if (hasImage) {
-                    btn.removeClass('btn-outline-secondary').addClass('btn-info');
+                    btn.removeClass('btn-secondary btn-outline-secondary btn-info').addClass('btn-primary');
                     if (!btn.find('.oe-image-status-badge').length) {
-                        btn.append('<span class="badge badge-success ml-1 oe-image-status-badge"><i class="fa fa-check"></i> Image Set</span>');
+                        btn.append('<span class="badge badge-light ml-1 oe-image-status-badge text-primary font-weight-bold"><i class="fa fa-check"></i> Image Set</span>');
                     }
                 } else {
-                    btn.removeClass('btn-info').addClass('btn-outline-secondary');
+                    btn.removeClass('btn-primary btn-info btn-success').addClass('btn-secondary');
                     btn.find('.oe-image-status-badge').remove();
                 }
             }
