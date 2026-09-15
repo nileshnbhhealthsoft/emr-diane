@@ -138,12 +138,25 @@
                 (window.top && typeof window.top.csrf_token_form !== 'undefined' ? window.top.csrf_token_form : '');
 
             // 7. Base URL of module
-            var webroot = (typeof top.webroot !== 'undefined' ? top.webroot : '') ||
-                (typeof window.webroot !== 'undefined' ? window.webroot : '') || '';
-            if (!webroot) {
-                var match = window.location.pathname.match(/^(\/[^\/]+)/);
-                webroot = match ? match[1] : '';
+            var webroot = '';
+            if (typeof top !== 'undefined' && top && typeof top.webroot_url !== 'undefined' && top.webroot_url !== null && top.webroot_url !== '') {
+                webroot = top.webroot_url;
+            } else if (typeof window.webroot_url !== 'undefined' && window.webroot_url !== null && window.webroot_url !== '') {
+                webroot = window.webroot_url;
+            } else if (typeof top !== 'undefined' && top && typeof top.webroot !== 'undefined' && top.webroot !== null && top.webroot !== '') {
+                webroot = top.webroot;
+            } else if (typeof window.webroot !== 'undefined' && window.webroot !== null && window.webroot !== '') {
+                webroot = window.webroot;
+            } else {
+                var pathname = window.location.pathname || '';
+                var idx = pathname.indexOf('/interface/');
+                if (idx !== -1) {
+                    webroot = pathname.substring(0, idx);
+                } else {
+                    webroot = '';
+                }
             }
+            webroot = (webroot || '').replace(/\/+$/, '');
             this.moduleBaseUrl = webroot + '/interface/modules/custom_modules/oe-module-group-canvas';
         },
 
