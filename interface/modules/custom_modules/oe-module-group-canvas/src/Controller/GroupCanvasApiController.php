@@ -73,6 +73,19 @@ class GroupCanvasApiController
         $uploadUrl = $webroot . '/interface/modules/custom_modules/oe-module-group-canvas/public/uploads/';
         $siteImagesUrl = $webroot . '/sites/' . $siteId . '/images/';
 
+        $siteDir = '';
+        try {
+            $kernel = OEGlobalsBag::getInstance()->getKernel();
+            if ($kernel) {
+                $siteDir = $kernel->getSiteDir($siteId);
+            }
+        } catch (\Throwable $e) {
+        }
+        if (!$siteDir) {
+            $siteDir = OEGlobalsBag::getInstance()->getProjectDir() . DIRECTORY_SEPARATOR . 'sites' . DIRECTORY_SEPARATOR . $siteId;
+        }
+        $siteImagesDir = $siteDir . DIRECTORY_SEPARATOR . 'images' . DIRECTORY_SEPARATOR;
+
         $responseConfigs = [];
 
         foreach ($formIds as $fId) {
@@ -89,17 +102,14 @@ class GroupCanvasApiController
                 $imageExists = false;
 
                 if (!empty($imageFile)) {
-                    $uploadPath = dirname(__DIR__, 2) . '/public/uploads/' . $imageFile;
+                    $uploadPath = dirname(__DIR__, 2) . DIRECTORY_SEPARATOR . 'public' . DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR . $imageFile;
+                    $sitePath = $siteImagesDir . $imageFile;
                     if (file_exists($uploadPath)) {
                         $imageUrl = $uploadUrl . $imageFile;
                         $imageExists = true;
-                    } else {
-                        // Fallback to site images
-                        $sitePath = OEGlobalsBag::getInstance()->getProjectDir() . '/sites/' . $siteId . '/images/' . $imageFile;
-                        if (file_exists($sitePath)) {
-                            $imageUrl = $siteImagesUrl . $imageFile;
-                            $imageExists = true;
-                        }
+                    } elseif (file_exists($sitePath)) {
+                        $imageUrl = $siteImagesUrl . $imageFile;
+                        $imageExists = true;
                     }
                 }
 
@@ -220,13 +230,29 @@ class GroupCanvasApiController
         $uploadUrl = $webroot . '/interface/modules/custom_modules/oe-module-group-canvas/public/uploads/';
         $siteImagesUrl = $webroot . '/sites/' . $siteId . '/images/';
 
+        $siteDir = '';
+        try {
+            $kernel = OEGlobalsBag::getInstance()->getKernel();
+            if ($kernel) {
+                $siteDir = $kernel->getSiteDir($siteId);
+            }
+        } catch (\Throwable $e) {
+        }
+        if (!$siteDir) {
+            $siteDir = OEGlobalsBag::getInstance()->getProjectDir() . DIRECTORY_SEPARATOR . 'sites' . DIRECTORY_SEPARATOR . $siteId;
+        }
+        $siteImagesDir = $siteDir . DIRECTORY_SEPARATOR . 'images' . DIRECTORY_SEPARATOR;
+
         $imageUrl = '';
         if (!empty($config['background_image'])) {
-            $uploadPath = dirname(__DIR__, 2) . '/public/uploads/' . $config['background_image'];
+            $uploadPath = dirname(__DIR__, 2) . DIRECTORY_SEPARATOR . 'public' . DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR . $config['background_image'];
+            $sitePath = $siteImagesDir . $config['background_image'];
             if (file_exists($uploadPath)) {
                 $imageUrl = $uploadUrl . $config['background_image'];
-            } else {
+            } elseif (file_exists($sitePath)) {
                 $imageUrl = $siteImagesUrl . $config['background_image'];
+            } else {
+                $imageUrl = $uploadUrl . $config['background_image'];
             }
         }
 
