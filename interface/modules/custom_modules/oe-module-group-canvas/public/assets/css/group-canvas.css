@@ -24,44 +24,35 @@
 .oe-group-canvas-btn {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
-    background: linear-gradient(135deg, #0d6efd, #0b5ed7);
-    color: #ffffff !important;
-    border: 1px solid #0a58ca;
-    border-radius: 5px;
-    padding: 3px 10px;
+    gap: 5px;
     font-size: 0.82rem;
     font-weight: 600;
+    line-height: 1.35;
+    padding: 3px 9px;
+    border-radius: 4px;
     text-decoration: none !important;
     cursor: pointer;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
     transition: all 0.18s ease-in-out;
+    vertical-align: middle;
 }
 
 .oe-group-canvas-btn:hover {
-    background: linear-gradient(135deg, #0b5ed7, #084298);
-    color: #ffffff !important;
     transform: translateY(-1px);
-    box-shadow: 0 3px 7px rgba(0, 0, 0, 0.22);
-}
-
-.oe-group-canvas-btn.has-saved-data {
-    background: linear-gradient(135deg, #198754, #157347);
-    border-color: #146c43;
-}
-
-.oe-group-canvas-btn.has-saved-data:hover {
-    background: linear-gradient(135deg, #157347, #0f5132);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
 }
 
 .oe-group-canvas-badge {
-    background-color: #ffc107;
-    color: #212529;
+    background-color: rgba(255, 255, 255, 0.3);
+    color: inherit;
+    border: 1px solid rgba(255, 255, 255, 0.45);
     font-size: 0.68rem;
     font-weight: 700;
-    padding: 2px 6px;
-    border-radius: 10px;
-    margin-left: 3px;
+    padding: 1px 6px;
+    border-radius: 8px;
+    margin-left: 4px;
+    display: inline-block;
+    line-height: 1.2;
 }
 
 /* ==========================================================================
@@ -82,9 +73,6 @@
     gap: 5px;
     font-size: 0.78rem !important;
     font-weight: 600 !important;
-    color: #ffffff !important;
-    background: linear-gradient(135deg, #0d6efd, #0b5ed7);
-    border: 1px solid #0a58ca !important;
     border-radius: 4px;
     padding: 2px 8px !important;
     line-height: 1.35;
@@ -95,19 +83,8 @@
 }
 
 .oe-summary-group-canvas-btn:hover {
-    background: linear-gradient(135deg, #0b5ed7, #084298);
     transform: translateY(-1px);
-    box-shadow: 0 2px 5px rgba(13, 110, 253, 0.28);
-}
-
-.oe-summary-group-canvas-btn.has-saved-data {
-    background: linear-gradient(135deg, #198754, #157347);
-    border-color: #146c43 !important;
-}
-
-.oe-summary-group-canvas-btn.has-saved-data:hover {
-    background: linear-gradient(135deg, #157347, #0f5132);
-    box-shadow: 0 2px 5px rgba(25, 135, 84, 0.28);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.22);
 }
 
 td.groupname, th.groupname, .groupname {
@@ -376,13 +353,13 @@ td.groupname, th.groupname, .groupname {
 }
 
 .oe-tool-btn {
-    background: transparent;
-    border: 1px solid transparent;
+    background: #f8f9fa;
+    border: 1px solid #ced4da;
     border-radius: 4px;
     padding: 4px 9px;
     font-size: 0.84rem;
     cursor: pointer;
-    color: #495057;
+    color: #212529 !important;
     transition: all 0.15s ease;
     display: inline-flex;
     align-items: center;
@@ -390,14 +367,15 @@ td.groupname, th.groupname, .groupname {
 }
 
 .oe-tool-btn:hover {
-    background: #e9ecef;
-    color: #212529;
+    background: #e2e6ea;
+    color: #000000 !important;
+    border-color: #adb5bd;
 }
 
 .oe-tool-btn.active {
-    background: #0d6efd;
-    color: #ffffff;
-    border-color: #0a58ca;
+    background: #0d6efd !important;
+    color: #ffffff !important;
+    border-color: #0a58ca !important;
     font-weight: 600;
 }
 
@@ -703,3 +681,120 @@ td.groupname, th.groupname, .groupname {
 .cursor-pointer {
     cursor: pointer;
 }
+
+/* ==========================================================================
+   Layout Editor - Encounter Summary Hide Column & Checkbox Styles
+   ========================================================================== */
+th.oe-enc-summary-hide-th {
+    white-space: nowrap !important;
+    vertical-align: middle !important;
+    text-align: center !important;
+    padding: 4px 10px !important;
+    font-size: 0.6875rem !important;
+    font-weight: 600 !important;
+    color: #495057 !important;
+    background-color: rgba(220, 53, 69, 0.08) !important;
+    border-left: 1px solid rgba(220, 53, 69, 0.15) !important;
+    border-right: 1px solid rgba(220, 53, 69, 0.15) !important;
+    min-width: 145px !important;
+}
+
+td.oe-enc-summary-hide-td {
+    text-align: center !important;
+    vertical-align: middle !important;
+    padding: 3px 6px !important;
+    background-color: rgba(220, 53, 69, 0.03) !important;
+    border-left: 1px solid rgba(220, 53, 69, 0.12) !important;
+    border-right: 1px solid rgba(220, 53, 69, 0.12) !important;
+}
+
+.oe-enc-hide-wrapper {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 20px;
+    margin: 0 auto;
+    position: relative;
+}
+
+.oe-enc-summary-hide-cb {
+    cursor: pointer !important;
+    width: 16px !important;
+    height: 16px !important;
+    accent-color: #dc3545 !important;
+    margin: 0 auto !important;
+    display: block !important;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.oe-enc-summary-hide-cb:hover {
+    transform: scale(1.15);
+}
+
+.oe-enc-hide-wrapper.oe-saving-pulse .oe-enc-summary-hide-cb {
+    animation: oe-pulse-saving 0.6s infinite alternate;
+}
+
+@keyframes oe-pulse-saving {
+    0% {
+        opacity: 0.4;
+        transform: scale(0.9);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1.2);
+    }
+}
+
+/* ==========================================================================
+   Layout Editor Real-time Feedback Toasts
+   ========================================================================== */
+.oe-layout-notification-container {
+    position: fixed;
+    top: 24px;
+    right: 24px;
+    z-index: 100000;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    pointer-events: none;
+}
+
+.oe-layout-toast {
+    display: inline-flex;
+    align-items: center;
+    padding: 10px 18px;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
+    opacity: 0;
+    transform: translateX(40px);
+    transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    pointer-events: auto;
+    max-width: 380px;
+}
+
+.oe-layout-toast.show {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+.oe-toast-success {
+    background: #198754;
+    color: #ffffff;
+    border-left: 4px solid #0f5132;
+}
+
+.oe-toast-info {
+    background: #0d6efd;
+    color: #ffffff;
+    border-left: 4px solid #084298;
+}
+
+.oe-toast-danger {
+    background: #dc3545;
+    color: #ffffff;
+    border-left: 4px solid #842029;
+}
+

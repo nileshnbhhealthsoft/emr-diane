@@ -36,3 +36,16 @@ CREATE TABLE IF NOT EXISTS `module_group_canvas_data` (
     INDEX `idx_pid_enc_form_grp` (`pid`, `encounter`, `form_id`, `group_id`)
 ) ENGINE=InnoDB COMMENT='Patient drawing annotations per encounter and group header';
 #EndIf
+
+#IfNotTable module_group_canvas_hidden_fields
+CREATE TABLE IF NOT EXISTS `module_group_canvas_hidden_fields` (
+    `id` INT NOT NULL PRIMARY KEY AUTO_INCREMENT,
+    `form_id` VARCHAR(31) NOT NULL,
+    `field_id` VARCHAR(31) NOT NULL,
+    `is_hidden` TINYINT(1) NOT NULL DEFAULT 1,
+    `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+    `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY `form_field_unique` (`form_id`, `field_id`)
+) ENGINE=InnoDB COMMENT='Fields hidden from Encounter Summary';
+#EndIf
+
