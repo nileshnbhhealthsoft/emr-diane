@@ -18,26 +18,22 @@ use OpenEMR\Modules\GroupCanvas\Model\GroupCanvasConfigModel;
 class GroupCanvasAdminController
 {
     private GroupCanvasConfigModel $configModel;
-    private string $uploadDir;
 
     public function __construct()
     {
         $this->configModel = new GroupCanvasConfigModel();
-        $this->uploadDir = dirname(__DIR__, 2) . DIRECTORY_SEPARATOR . 'public' . DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR;
-        if (!is_dir($this->uploadDir)) {
-            @mkdir($this->uploadDir, 0777, true);
-        }
+        $this->ensureUploadDir();
     }
 
     /**
-     * Get site images directory and public web URL info
+     * Get site documents upload directory and site information
      *
      * @return array
      */
-    private function getSiteImagesInfo(): array
+    public function getUploadInfo(): array
     {
         $session = \OpenEMR\Common\Session\SessionWrapperFactory::getInstance()->getActiveSession();
-        $siteId = $session->get('site_id') ?? 'default';
+        $siteId = $session->get('site_id') ?? ($_SESSION['site_id'] ?? ($GLOBALS['site_id'] ?? 'default'));
         $siteDir = '';
         try {
             $kernel = OEGlobalsBag::getInstance()->getKernel();
@@ -46,18 +42,46 @@ class GroupCanvasAdminController
             }
         } catch (\Throwable $e) {
         }
+        if (!$siteDir && OEGlobalsBag::getInstance()->has('OE_SITE_DIR')) {
+            $siteDir = OEGlobalsBag::getInstance()->get('OE_SITE_DIR');
+        }
         if (!$siteDir) {
             $siteDir = OEGlobalsBag::getInstance()->getProjectDir() . DIRECTORY_SEPARATOR . 'sites' . DIRECTORY_SEPARATOR . $siteId;
         }
 
-        $siteImagesDir = $siteDir . DIRECTORY_SEPARATOR . 'images' . DIRECTORY_SEPARATOR;
-        $webroot = OEGlobalsBag::getInstance()->getWebRoot();
-        $siteImagesUrl = $webroot . '/sites/' . $siteId . '/images/';
+        $uploadDir = $siteDir . DIRECTORY_SEPARATOR . 'documents' . DIRECTORY_SEPARATOR . 'upload' . DIRECTORY_SEPARATOR;
 
         return [
-            'dir' => $siteImagesDir,
-            'url' => $siteImagesUrl
+            'dir' => $uploadDir,
+            'siteDir' => $siteDir,
+            'siteId' => $siteId
         ];
+    }
+
+    /**
+     * Ensure the upload directory exists
+     */
+    private function ensureUploadDir(): void
+    {
+        $info = $this->getUploadInfo();
+        if (!is_dir($info['dir'])) {
+            @mkdir($info['dir'], 0777, true);
+        }
+    }
+
+    /**
+     * Generate the public URL for a canvas image template
+     *
+     * @param string $filename
+     * @return string
+     */
+    public function getImageUrl(string $filename): string
+    {
+        if (empty($filename)) {
+            return '';
+        }
+        $webroot = OEGlobalsBag::getInstance()->getWebRoot();
+        return $webroot . '/interface/modules/custom_modules/oe-module-group-canvas/public/api/get_image.php?file=' . urlencode($filename);
     }
 
     /**
@@ -90,22 +114,7 @@ class GroupCanvasAdminController
     public function getConfig(string $formId, string $groupId): array
     {
         $config = $this->configModel->getConfigByFormAndGroup($formId, $groupId);
-        $webroot = OEGlobalsBag::getInstance()->getWebRoot();
-        $uploadUrl = $webroot . '/interface/modules/custom_modules/oe-module-group-canvas/public/uploads/';
-        $siteInfo = $this->getSiteImagesInfo();
-
-        $imageUrl = '';
-        if (!empty($config['background_image'])) {
-            $uploadPath = $this->uploadDir . $config['background_image'];
-            $sitePath = $siteInfo['dir'] . $config['background_image'];
-            if (file_exists($uploadPath)) {
-                $imageUrl = $uploadUrl . $config['background_image'];
-            } elseif (file_exists($sitePath)) {
-                $imageUrl = $siteInfo['url'] . $config['background_image'];
-            } else {
-                $imageUrl = $uploadUrl . $config['background_image'];
-            }
-        }
+        $imageUrl = !empty($config['background_image']) ? $this->getImageUrl($config['background_image']) : '';
 
         return [
             'success' => true,
@@ -151,39 +160,31 @@ class GroupCanvasAdminController
 
             // Create a safe, unique filename
             $safeName = preg_replace('/[^a-zA-Z0-9_\-]/', '_', $formId . '_' . $groupId) . '_' . time() . '.' . $ext;
-            $siteInfo = $this->getSiteImagesInfo();
+            $uploadInfo = $this->getUploadInfo();
+            $targetDir = $uploadInfo['dir'];
+
+            if (!is_dir($targetDir)) {
+                @mkdir($targetDir, 0777, true);
+            }
+
             $uploaded = false;
-
-            // 1. Try module upload directory first if writable
-            if (!is_dir($this->uploadDir)) {
-                @mkdir($this->uploadDir, 0777, true);
-            }
-            if (is_dir($this->uploadDir) && is_writable($this->uploadDir)) {
-                $targetPath = $this->uploadDir . $safeName;
-                if (@move_uploaded_file($file['tmp_name'], $targetPath)) {
-                    $uploaded = true;
-                }
-            }
-
-            // 2. If module upload dir is not writable (e.g. Linux permission limits), use OpenEMR site images directory
-            if (!$uploaded) {
-                if (!is_dir($siteInfo['dir'])) {
-                    @mkdir($siteInfo['dir'], 0775, true);
-                }
-                $targetPath = $siteInfo['dir'] . $safeName;
-                if (@move_uploaded_file($file['tmp_name'], $targetPath) || @copy($file['tmp_name'], $targetPath)) {
-                    $uploaded = true;
-                }
+            $targetPath = $targetDir . $safeName;
+            if (@move_uploaded_file($file['tmp_name'], $targetPath) || @copy($file['tmp_name'], $targetPath)) {
+                $uploaded = true;
             }
 
             if ($uploaded) {
                 // Remove old uploaded file if different
                 if (!empty($backgroundImage) && $backgroundImage !== $safeName) {
-                    if (file_exists($this->uploadDir . $backgroundImage)) {
-                        @unlink($this->uploadDir . $backgroundImage);
-                    }
-                    if (file_exists($siteInfo['dir'] . $backgroundImage)) {
-                        @unlink($siteInfo['dir'] . $backgroundImage);
+                    $cleanupPaths = [
+                        $targetDir . $backgroundImage,
+                        $uploadInfo['siteDir'] . DIRECTORY_SEPARATOR . 'images' . DIRECTORY_SEPARATOR . $backgroundImage,
+                        dirname(__DIR__, 2) . DIRECTORY_SEPARATOR . 'public' . DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR . $backgroundImage
+                    ];
+                    foreach ($cleanupPaths as $p) {
+                        if (file_exists($p)) {
+                            @unlink($p);
+                        }
                     }
                 }
                 $backgroundImage = $safeName;
@@ -204,20 +205,7 @@ class GroupCanvasAdminController
         );
 
         if ($saved) {
-            $webroot = OEGlobalsBag::getInstance()->getWebRoot();
-            $uploadUrl = $webroot . '/interface/modules/custom_modules/oe-module-group-canvas/public/uploads/';
-            $siteInfo = $this->getSiteImagesInfo();
-
-            $imageUrl = '';
-            if (!empty($backgroundImage)) {
-                if (file_exists($this->uploadDir . $backgroundImage)) {
-                    $imageUrl = $uploadUrl . $backgroundImage;
-                } elseif (file_exists($siteInfo['dir'] . $backgroundImage)) {
-                    $imageUrl = $siteInfo['url'] . $backgroundImage;
-                } else {
-                    $imageUrl = $uploadUrl . $backgroundImage;
-                }
-            }
+            $imageUrl = !empty($backgroundImage) ? $this->getImageUrl($backgroundImage) : '';
 
             return [
                 'success' => true,
@@ -256,14 +244,16 @@ class GroupCanvasAdminController
 
         $config = $this->configModel->getConfigByFormAndGroup($formId, $groupId);
         if ($config && !empty($config['background_image'])) {
-            $siteInfo = $this->getSiteImagesInfo();
-            $filePath = $this->uploadDir . $config['background_image'];
-            if (file_exists($filePath)) {
-                @unlink($filePath);
-            }
-            $siteFilePath = $siteInfo['dir'] . $config['background_image'];
-            if (file_exists($siteFilePath)) {
-                @unlink($siteFilePath);
+            $uploadInfo = $this->getUploadInfo();
+            $cleanupPaths = [
+                $uploadInfo['dir'] . $config['background_image'],
+                $uploadInfo['siteDir'] . DIRECTORY_SEPARATOR . 'images' . DIRECTORY_SEPARATOR . $config['background_image'],
+                dirname(__DIR__, 2) . DIRECTORY_SEPARATOR . 'public' . DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR . $config['background_image']
+            ];
+            foreach ($cleanupPaths as $p) {
+                if (file_exists($p)) {
+                    @unlink($p);
+                }
             }
         }
 
