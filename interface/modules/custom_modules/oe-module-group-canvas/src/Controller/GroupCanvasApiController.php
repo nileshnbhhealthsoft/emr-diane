@@ -68,24 +68,6 @@ class GroupCanvasApiController
             }
         }
 
-        $webroot = OEGlobalsBag::getInstance()->getWebRoot();
-        $siteId = $session->get('site_id') ?? 'default';
-        $uploadUrl = $webroot . '/interface/modules/custom_modules/oe-module-group-canvas/public/uploads/';
-        $siteImagesUrl = $webroot . '/sites/' . $siteId . '/images/';
-
-        $siteDir = '';
-        try {
-            $kernel = OEGlobalsBag::getInstance()->getKernel();
-            if ($kernel) {
-                $siteDir = $kernel->getSiteDir($siteId);
-            }
-        } catch (\Throwable $e) {
-        }
-        if (!$siteDir) {
-            $siteDir = OEGlobalsBag::getInstance()->getProjectDir() . DIRECTORY_SEPARATOR . 'sites' . DIRECTORY_SEPARATOR . $siteId;
-        }
-        $siteImagesDir = $siteDir . DIRECTORY_SEPARATOR . 'images' . DIRECTORY_SEPARATOR;
-
         $responseConfigs = [];
 
         foreach ($formIds as $fId) {
@@ -102,14 +84,9 @@ class GroupCanvasApiController
                 $imageExists = false;
 
                 if (!empty($imageFile)) {
-                    $uploadPath = dirname(__DIR__, 2) . DIRECTORY_SEPARATOR . 'public' . DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR . $imageFile;
-                    $sitePath = $siteImagesDir . $imageFile;
-                    if (file_exists($uploadPath)) {
-                        $imageUrl = $uploadUrl . $imageFile;
-                        $imageExists = true;
-                    } elseif (file_exists($sitePath)) {
-                        $imageUrl = $siteImagesUrl . $imageFile;
-                        $imageExists = true;
+                    $imageExists = $this->imageExists($imageFile);
+                    if ($imageExists) {
+                        $imageUrl = $this->getImageUrl($imageFile);
                     }
                 }
 
@@ -224,37 +201,7 @@ class GroupCanvasApiController
 
         $drawing = $this->dataModel->getDrawing($pid, $encounter, $formId, $groupId, $formInstanceId);
         $config = $this->configModel->getConfigByFormAndGroup($formId, $groupId);
-
-        $webroot = OEGlobalsBag::getInstance()->getWebRoot();
-        $siteId = $session->get('site_id') ?? 'default';
-        $uploadUrl = $webroot . '/interface/modules/custom_modules/oe-module-group-canvas/public/uploads/';
-        $siteImagesUrl = $webroot . '/sites/' . $siteId . '/images/';
-
-        $siteDir = '';
-        try {
-            $kernel = OEGlobalsBag::getInstance()->getKernel();
-            if ($kernel) {
-                $siteDir = $kernel->getSiteDir($siteId);
-            }
-        } catch (\Throwable $e) {
-        }
-        if (!$siteDir) {
-            $siteDir = OEGlobalsBag::getInstance()->getProjectDir() . DIRECTORY_SEPARATOR . 'sites' . DIRECTORY_SEPARATOR . $siteId;
-        }
-        $siteImagesDir = $siteDir . DIRECTORY_SEPARATOR . 'images' . DIRECTORY_SEPARATOR;
-
-        $imageUrl = '';
-        if (!empty($config['background_image'])) {
-            $uploadPath = dirname(__DIR__, 2) . DIRECTORY_SEPARATOR . 'public' . DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR . $config['background_image'];
-            $sitePath = $siteImagesDir . $config['background_image'];
-            if (file_exists($uploadPath)) {
-                $imageUrl = $uploadUrl . $config['background_image'];
-            } elseif (file_exists($sitePath)) {
-                $imageUrl = $siteImagesUrl . $config['background_image'];
-            } else {
-                $imageUrl = $uploadUrl . $config['background_image'];
-            }
-        }
+        $imageUrl = !empty($config['background_image']) ? $this->getImageUrl($config['background_image']) : '';
 
         return [
             'success' => true,
@@ -265,6 +212,70 @@ class GroupCanvasApiController
             'encounter' => $encounter,
             'form_instance_id' => $formInstanceId
         ];
+    }
+
+    /**
+     * Generate the public URL for a canvas image template
+     *
+     * @param string $filename
+     * @return string
+     */
+    public function getImageUrl(string $filename): string
+    {
+        if (empty($filename)) {
+            return '';
+        }
+        $webroot = OEGlobalsBag::getInstance()->getWebRoot();
+        return $webroot . '/interface/modules/custom_modules/oe-module-group-canvas/public/api/get_image.php?file=' . urlencode($filename);
+    }
+
+    /**
+     * Check if background image exists on server
+     *
+     * @param string $filename
+     * @return bool
+     */
+    public function imageExists(string $filename): bool
+    {
+        if (empty($filename)) {
+            return false;
+        }
+
+        $session = SessionWrapperFactory::getInstance()->getActiveSession();
+        $siteId = $session->get('site_id') ?? ($_SESSION['site_id'] ?? ($GLOBALS['site_id'] ?? 'default'));
+        $siteDir = '';
+        try {
+            $kernel = OEGlobalsBag::getInstance()->getKernel();
+            if ($kernel) {
+                $siteDir = $kernel->getSiteDir($siteId);
+            }
+        } catch (\Throwable $e) {
+        }
+        if (!$siteDir && OEGlobalsBag::getInstance()->has('OE_SITE_DIR')) {
+            $siteDir = OEGlobalsBag::getInstance()->get('OE_SITE_DIR');
+        }
+        if (!$siteDir) {
+            $siteDir = OEGlobalsBag::getInstance()->getProjectDir() . DIRECTORY_SEPARATOR . 'sites' . DIRECTORY_SEPARATOR . $siteId;
+        }
+
+        $defaultSiteDir = OEGlobalsBag::getInstance()->getProjectDir() . DIRECTORY_SEPARATOR . 'sites' . DIRECTORY_SEPARATOR . 'default';
+
+        $candidatePaths = [
+            $siteDir . DIRECTORY_SEPARATOR . 'documents' . DIRECTORY_SEPARATOR . 'upload' . DIRECTORY_SEPARATOR . $filename,
+            $siteDir . DIRECTORY_SEPARATOR . 'images' . DIRECTORY_SEPARATOR . $filename,
+            dirname(__DIR__, 2) . DIRECTORY_SEPARATOR . 'public' . DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR . $filename,
+            $siteDir . DIRECTORY_SEPARATOR . 'documents' . DIRECTORY_SEPARATOR . $filename,
+            $defaultSiteDir . DIRECTORY_SEPARATOR . 'documents' . DIRECTORY_SEPARATOR . 'upload' . DIRECTORY_SEPARATOR . $filename,
+            $defaultSiteDir . DIRECTORY_SEPARATOR . 'images' . DIRECTORY_SEPARATOR . $filename
+        ];
+
+        foreach ($candidatePaths as $path) {
+            if (file_exists($path) && is_file($path)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**

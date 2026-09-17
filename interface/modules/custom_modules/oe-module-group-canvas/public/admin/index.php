@@ -35,9 +35,6 @@ if (!isset($formsWithGroups[$selectedFormId]) && !empty($formsWithGroups)) {
 }
 
 $currentForm = $formsWithGroups[$selectedFormId] ?? null;
-$webroot = OEGlobalsBag::getInstance()->getWebRoot();
-$uploadUrl = $webroot . '/interface/modules/custom_modules/oe-module-group-canvas/public/uploads/';
-$siteImagesUrl = $webroot . '/sites/' . $session->get('site_id') . '/images/';
 ?>
 <!DOCTYPE html>
 <html>
@@ -161,15 +158,7 @@ $siteImagesUrl = $webroot . '/sites/' . $session->get('site_id') . '/images/';
                         $cWidth = $cfg['canvas_width'] ?? 800;
                         $cHeight = $cfg['canvas_height'] ?? 600;
 
-                        $imgSrc = '';
-                        if (!empty($bgImage)) {
-                            $uploadPath = dirname(__DIR__, 2) . '/public/uploads/' . $bgImage;
-                            if (file_exists($uploadPath)) {
-                                $imgSrc = $uploadUrl . $bgImage;
-                            } else {
-                                $imgSrc = $siteImagesUrl . $bgImage;
-                            }
-                        }
+                        $imgSrc = !empty($bgImage) ? $controller->getImageUrl($bgImage) : '';
                     ?>
                         <div class="card group-card" id="card_<?php echo attr($group['group_id']); ?>">
                             <div class="card-header bg-white d-flex justify-content-between align-items-center border-bottom">
