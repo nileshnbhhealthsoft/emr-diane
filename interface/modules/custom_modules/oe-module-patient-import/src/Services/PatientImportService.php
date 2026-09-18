@@ -155,6 +155,44 @@ class PatientImportService
     }
 
     /**
+     * Returns the temporary upload directory path located in [sites]/<site_id>/documents/temp_upload.
+     * Creates the directory if it does not already exist.
+     *
+     * @return string
+     */
+    public static function getTempUploadDir(): string
+    {
+        $siteDir = null;
+        try {
+            if (class_exists(OEGlobalsBag::class) && OEGlobalsBag::getInstance()->has('OE_SITE_DIR')) {
+                $siteDir = OEGlobalsBag::getInstance()->get('OE_SITE_DIR');
+            }
+        } catch (\Throwable) {
+            $siteDir = null;
+        }
+
+        if (!$siteDir && !empty($GLOBALS['OE_SITE_DIR'])) {
+            $siteDir = $GLOBALS['OE_SITE_DIR'];
+        }
+
+        if (!$siteDir) {
+            $siteId = $_SESSION['site_id'] ?? 'default';
+            $siteDir = dirname(__DIR__, 6) . DIRECTORY_SEPARATOR . 'sites' . DIRECTORY_SEPARATOR . $siteId;
+            if (!is_dir($siteDir)) {
+                $siteDir = dirname(__DIR__, 6) . DIRECTORY_SEPARATOR . 'sites' . DIRECTORY_SEPARATOR . 'default';
+            }
+        }
+
+        $uploadDir = rtrim($siteDir, "\\/") . DIRECTORY_SEPARATOR . 'documents' . DIRECTORY_SEPARATOR . 'temp_upload';
+
+        if (!is_dir($uploadDir)) {
+            @mkdir($uploadDir, 0777, true);
+        }
+
+        return $uploadDir;
+    }
+
+    /**
      * Parses an uploaded CSV or Excel file and returns headers, sample preview, and temp file ID.
      *
      * @param string $uploadedFilePath
@@ -172,10 +210,7 @@ class PatientImportService
             ];
         }
 
-        $uploadDir = dirname(__DIR__, 2) . DIRECTORY_SEPARATOR . 'temp_uploads';
-        if (!is_dir($uploadDir)) {
-            @mkdir($uploadDir, 0777, true);
-        }
+        $uploadDir = self::getTempUploadDir();
 
         $tempKey = 'pat_import_' . time() . '_' . bin2hex(random_bytes(6)) . '.' . $ext;
         $savedPath = $uploadDir . DIRECTORY_SEPARATOR . $tempKey;
@@ -445,7 +480,7 @@ class PatientImportService
      */
     public static function processImport(string $tempKey, array $columnMapping, string $duplicateStrategy = 'skip', ?int $authUserId = null): array
     {
-        $uploadDir = dirname(__DIR__, 2) . DIRECTORY_SEPARATOR . 'temp_uploads';
+        $uploadDir = self::getTempUploadDir();
         $jsonCachePath = $uploadDir . DIRECTORY_SEPARATOR . $tempKey . '.json';
         $originalFilePath = $uploadDir . DIRECTORY_SEPARATOR . $tempKey;
 
